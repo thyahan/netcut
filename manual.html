@@ -69,7 +69,7 @@ th{font-weight:600}
 
     <div class="step">
       <h3>ขั้นที่ 1 · เช็คว่าเครื่องมีอะไรแล้วบ้าง</h3>
-      <pre>for c in brew node adb docker gh; do printf "%-7s" $c; command -v $c >/dev/null && echo "มีแล้ว" || echo "ยังไม่มี"; done</pre>
+      <pre>for c in brew git node adb docker; do printf "%-7s" $c; command -v $c >/dev/null && echo "มีแล้ว" || echo "ยังไม่มี"; done</pre>
       <p class="hint">ตัวที่ขึ้น "มีแล้ว" ข้ามขั้นนั้นได้เลย</p>
     </div>
 
@@ -77,15 +77,15 @@ th{font-weight:600}
       <h3>ขั้นที่ 2 · Homebrew <span class="badge">ต้องใช้รหัส admin</span></h3>
       <p>ตัวติดตั้งโปรแกรมของ Mac ที่ขั้นอื่นใช้</p>
       <pre>/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"</pre>
-      <p>ติดตั้งเสร็จ ให้รันบรรทัดนี้ต่อ (ทำให้พิมพ์ <code>brew</code> ได้ทุกครั้งที่เปิด Terminal)</p>
-      <pre>echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile && eval "$(/opt/homebrew/bin/brew shellenv)"</pre>
-      <p class="hint">เช็ค: <code>brew -v</code> ต้องขึ้นเลขเวอร์ชัน · ถ้าไม่มีรหัส admin ให้ IT ติดตั้งขั้นนี้กับขั้นที่ 4 ให้</p>
+      <p>ติดตั้งเสร็จ ให้รันบรรทัดนี้ต่อ (ทำให้พิมพ์ <code>brew</code> ได้ทุกครั้งที่เปิด Terminal · ใช้ได้ทั้ง Mac ชิป Apple และ Intel ทั้ง zsh และ bash · รันซ้ำได้ไม่เพิ่มบรรทัดซ้ำ)</p>
+      <pre>BREW=$([ -x /opt/homebrew/bin/brew ] && echo /opt/homebrew/bin/brew || echo /usr/local/bin/brew); RC=$([ "${SHELL##*/}" = bash ] && echo ~/.bash_profile || echo ~/.zprofile); grep -qs "brew shellenv" "$RC" || echo "eval \"\$($BREW shellenv)\"" >> "$RC"; eval "$($BREW shellenv)"</pre>
+      <p class="hint">เช็ค: ปิด Terminal แล้วเปิดใหม่ พิมพ์ <code>brew -v</code> ต้องขึ้นเลขเวอร์ชัน · Homebrew ติดตั้ง <code>git</code> ให้ด้วย · ถ้าไม่มีรหัส admin ให้ IT ติดตั้งขั้นนี้กับขั้นที่ 4 ให้</p>
     </div>
 
     <div class="step">
-      <h3>ขั้นที่ 3 · Node, adb และ GitHub CLI</h3>
-      <p>Node ใช้รัน netcut · adb ใช้สั่งมือถือผ่านสาย USB · GitHub CLI ใช้ดาวน์โหลด netcut</p>
-      <pre>brew install node gh && brew install --cask android-platform-tools</pre>
+      <h3>ขั้นที่ 3 · Node และ adb</h3>
+      <p>Node ใช้รัน netcut · adb ใช้สั่งมือถือผ่านสาย USB</p>
+      <pre>brew install node && brew install --cask android-platform-tools</pre>
       <p class="hint">เช็ค: <code>node -v</code> และ <code>adb version</code> ต้องขึ้นเลขเวอร์ชันทั้งคู่</p>
     </div>
 
@@ -102,10 +102,7 @@ th{font-weight:600}
 
     <div class="step">
       <h3>ขั้นที่ 5 · ดาวน์โหลด netcut</h3>
-      <p>ต้องมีบัญชี GitHub ที่ได้รับเชิญเข้า repo แล้ว (ขอจากเจ้าของ repo)</p>
-      <pre>gh auth login --web</pre>
-      <p>กด Enter ตามที่ถาม จะเปิด browser ให้ login GitHub · เสร็จแล้วรัน</p>
-      <pre>gh repo clone thyahan/netcut ~/netcut</pre>
+      <pre>git clone https://github.com/thyahan/netcut.git ~/netcut</pre>
       <p class="hint">netcut จะอยู่ที่ <code>~/netcut</code> (ต้องอยู่ใต้โฟลเดอร์ home)</p>
     </div>
 

@@ -3,7 +3,7 @@
 ปุ่มตัดเน็ตสำหรับ manual test เคสเน็ตหลุดของ vdoc (มือถือ Android ผ่าน USB + MacBook)
 
 ```
-gh repo clone thyahan/netcut ~/netcut && cd ~/netcut   # หรือ git clone git@github.com:thyahan/netcut.git
+git clone https://github.com/thyahan/netcut.git ~/netcut && cd ~/netcut
 npm start                 # Docker Desktop + AdGuard (docker compose) + DNS relay + หน้าเว็บ http://127.0.0.1:8790
 npm run cli -- -w         # (ไม่บังคับ) โหมดคีย์บอร์ดใน terminal
 npm run stop              # ปิด AdGuard
