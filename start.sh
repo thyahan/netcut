@@ -24,15 +24,17 @@ fi
 docker compose version >/dev/null 2>&1 || { echo "✘ ไม่มี docker compose — อัปเดต Docker Desktop"; exit 1; }
 docker compose up -d
 
-if [ ! -f adguard/conf/AdGuardHome.yaml ]; then
+# ask AdGuard itself whether it still needs its first-run setup (the install API only answers then)
+for i in $(seq 1 30); do curl -s -o /dev/null -m 2 http://127.0.0.1:3300/ && break; sleep 1; done
+if [ "$(curl -s -o /dev/null -w '%{http_code}' -m 5 http://127.0.0.1:3300/control/install/get_addresses)" = 200 ]; then
   echo "first run: configuring AdGuard…"
-  for i in $(seq 1 30); do curl -s -o /dev/null -m 2 http://127.0.0.1:3300/ && break; sleep 1; done
   PASS=$(openssl rand -hex 16)
   (umask 077; printf 'ADGUARD_USER=netcut\nADGUARD_PASS=%s\n' "$PASS" > adguard/.env)
   curl -sf -m 10 -H 'Content-Type: application/json' http://127.0.0.1:3300/control/install/configure \
     -d "{\"web\":{\"ip\":\"0.0.0.0\",\"port\":80},\"dns\":{\"ip\":\"0.0.0.0\",\"port\":53},\"username\":\"netcut\",\"password\":\"$PASS\"}" >/dev/null
 fi
 for i in $(seq 1 30); do curl -s -o /dev/null -m 2 http://127.0.0.1:8792/ && break; sleep 1; done
+[ -f adguard/.env ] || { echo "✘ AdGuard ตั้งค่าไว้แล้วแต่ไม่มี adguard/.env — รัน: docker compose down && rm -rf adguard/conf adguard/work แล้ว npm start ใหม่"; exit 1; }
 if ! dig @127.0.0.1 -p 1053 +tcp +short +time=2 +tries=3 example.com | grep -q .; then
   echo "✘ AdGuard ไม่ตอบ DNS ที่ port 1053 — ดู log: docker logs netcut-adguard"
   exit 1
