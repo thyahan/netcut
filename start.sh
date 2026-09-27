@@ -9,7 +9,7 @@ need node   "brew install node"
 need adb    "brew install --cask android-platform-tools"
 need docker "ติดตั้ง Docker Desktop: brew install --cask docker (หรือโหลดจาก docker.com)"
 
-# Docker Desktop first; colima only as a fallback (its default forwarder is TCP-only -> grpc for UDP DNS)
+# Docker Desktop first; colima as a fallback
 if ! docker info >/dev/null 2>&1; then
   if [ -d /Applications/Docker.app ]; then
     echo "starting Docker Desktop…"
@@ -33,9 +33,8 @@ if [ ! -f adguard/conf/AdGuardHome.yaml ]; then
     -d "{\"web\":{\"ip\":\"0.0.0.0\",\"port\":80},\"dns\":{\"ip\":\"0.0.0.0\",\"port\":53},\"username\":\"netcut\",\"password\":\"$PASS\"}" >/dev/null
 fi
 for i in $(seq 1 30); do curl -s -o /dev/null -m 2 http://127.0.0.1:8792/ && break; sleep 1; done
-if ! dig @127.0.0.1 -p 1053 +short +time=2 +tries=3 example.com | grep -q .; then
-  echo "✘ AdGuard ไม่ตอบ DNS ทาง UDP 1053 — ดู log: docker logs netcut-adguard"
-  echo "  (ถ้าใช้ colima: colima stop && colima start --port-forwarder grpc --network-host-addresses)"
+if ! dig @127.0.0.1 -p 1053 +tcp +short +time=2 +tries=3 example.com | grep -q .; then
+  echo "✘ AdGuard ไม่ตอบ DNS ที่ port 1053 — ดู log: docker logs netcut-adguard"
   exit 1
 fi
 
