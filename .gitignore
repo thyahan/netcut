@@ -1,0 +1,7 @@
+adguard/.env
+adguard/conf/
+adguard/work/
+netcut.log
+presets.mjs.bak
+coverage.html
+.DS_Store

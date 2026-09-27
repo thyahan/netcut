@@ -1,0 +1,15 @@
+# AdGuard used only to block Vroom for devices whose DNS points at this Mac.
+# DNS is published on 1053 (colima's dnsmasq owns 53 in the VM); dns-relay.mjs forwards :53 -> 1053.
+services:
+  adguard:
+    image: adguard/adguardhome:latest
+    container_name: netcut-adguard
+    restart: unless-stopped
+    ports:
+      - "1053:53/udp"
+      - "1053:53/tcp"
+      - "127.0.0.1:8792:80"
+      - "127.0.0.1:3300:3000"
+    volumes:
+      - ./adguard/conf:/opt/adguardhome/conf
+      - ./adguard/work:/opt/adguardhome/work

@@ -1,0 +1,190 @@
+<title>NetCut QA Manual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --bg:#F5F7F6; --paper:#FFFFFF; --ink:#18242B; --muted:#5A6970; --line:#D6DEDB;
+  --accent:#0E6E73; --soft:#DDEFEE; --warn:#8A5A00; --warn-soft:#FAF0D6;
+  --body:"IBM Plex Sans Thai",system-ui,-apple-system,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#11171B; --paper:#182127; --ink:#E4ECEE; --muted:#9AABB2; --line:#2D3B42;
+    --accent:#56C4C0; --soft:#173A3B; --warn:#E6B955; --warn-soft:#3A2F13;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#11171B; --paper:#182127; --ink:#E4ECEE; --muted:#9AABB2; --line:#2D3B42;
+  --accent:#56C4C0; --soft:#173A3B; --warn:#E6B955; --warn-soft:#3A2F13;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.7;padding-inline:16px;padding-block:32px 72px}
+main{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:36px}
+h1{font-size:30px;margin:0;line-height:1.25}
+h2{font-size:21px;margin:0 0 10px;padding-top:12px;border-top:1px solid var(--line);line-height:1.3}
+h3{font-size:17px;margin:18px 0 6px}
+p{margin:0 0 8px}
+ol,ul{margin:0;padding-left:24px;display:flex;flex-direction:column;gap:4px}
+code{font-family:var(--mono);font-size:.86em;background:var(--soft);padding:1px 5px;border-radius:4px}
+pre{font-family:var(--mono);font-size:13.5px;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto;margin:6px 0 10px}
+kbd{font-family:var(--mono);font-size:13px;font-weight:600;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 7px;background:var(--paper)}
+.lede{color:var(--muted)}
+.note{background:var(--warn-soft);border-radius:8px;padding:10px 14px;font-size:15px}
+.note b{color:var(--warn)}
+.case{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:10px 0}
+.case h3{margin:0 0 6px}
+.meta{font-size:14px;color:var(--muted);margin-bottom:6px}
+.expect{margin-top:6px;font-size:15px}
+.expect b{color:var(--accent)}
+table{border-collapse:collapse;width:100%;font-size:15px}
+td,th{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+th{font-weight:600}
+.table-wrap{overflow-x:auto}
+</style>
+
+<main>
+  <header>
+    <h1>NetCut QA Manual</h1>
+    <p class="lede">วิธีเทสต์เน็ตหลุดของ vdoc (video-call-app, online-self, video-call-agent) บนเครื่องจริง · agent ใช้ Chrome บน MacBook · ลูกค้าใช้มือถือ Android ต่อสาย USB</p>
+  </header>
+
+  <section>
+    <h2>1. ติดตั้งครั้งแรก</h2>
+    <ol>
+      <li>ติดตั้ง <b>Docker Desktop</b> (โหลดจาก docker.com หรือ <code>brew install --cask docker</code>) แล้วเปิดครั้งแรกให้เสร็จ</li>
+      <li>ติดตั้ง Node และ adb:
+        <pre>brew install node
+brew install --cask android-platform-tools</pre></li>
+      <li>มือถือ: เปิด <b>Developer options → USB debugging</b> แล้ว<b>เสียบสาย USB</b> กับ Mac กดยอมรับบนมือถือ (netcut สั่งมือถือผ่านสายนี้)</li>
+      <li>ถ้ามือถือถามให้อนุญาต USB debugging จาก Mac เครื่องนี้ ให้ติ๊ก "Always allow" แล้วกด Allow</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>2. เริ่มทุกครั้ง</h2>
+    <ol>
+      <li>เปิด <b>Docker Desktop</b> (ถ้ายังไม่เปิด <code>npm start</code> จะเปิดให้)</li>
+      <li>ครั้งแรกเท่านั้น: <code>git clone git@github.com:thyahan/netcut.git</code></li>
+      <li><code>cd netcut</code> แล้ว <code>npm start</code> (ครั้งแรกใช้เวลาสักพัก เพราะโหลด AdGuard)</li>
+      <li>ถ้า macOS ถามว่าให้ <code>node</code> รับการเชื่อมต่อ ให้กด <b>Allow</b></li>
+      <li>หน้าเว็บ netcut จะเปิดขึ้นมาเอง (ถ้าไม่ขึ้น เปิด <code>http://127.0.0.1:8790</code>) · ปล่อยหน้าต่าง terminal ไว้ อย่าปิด</li>
+      <li>มุมขวาบนต้องมีจุดเขียว 3 จุด: <b>มือถือต่อ USB</b>, <b>AdGuard</b>, <b>DNS relay</b></li>
+      <li><b>IP ของ Mac</b> อยู่ในกล่อง "บล็อก Vroom" ตรง "ตั้ง DNS มือถือเป็น" ใช้กับ 2 เคสบล็อก Vroom</li>
+    </ol>
+    <div class="note"><b>ห้ามใช้</b> adb แบบ wireless และห้ามต่อ VPN ตอนเทสต์ · staging เปิดคิว 10:00–20:00</div>
+  </section>
+
+  <section>
+    <h2>3. ปุ่ม</h2>
+    <div class="table-wrap"><table>
+      <tr><th>ปุ่ม</th><th>ทำอะไร</th><th>คำสั่งจริง</th></tr>
+      <tr><td><kbd>1</kbd></td><td>ตัดเน็ตมือถือ ตามวิธีที่เลือก: <b>หลุดจากเครือข่าย</b> (โหมดเครื่องบิน + ปิด Wi-Fi) หรือ <b>Wi-Fi ยังต่อ แต่แอปใช้เน็ตไม่ได้</b></td><td><code>cmd connectivity airplane-mode enable; svc wifi disable</code> หรือ <code>cmd connectivity set-package-networking-enabled false &lt;แอป&gt;</code></td></tr>
+      <tr><td><kbd>2</kbd></td><td>เปิดเน็ตมือถือ (คืนได้ทั้ง 2 วิธี)</td><td><code>adb shell cmd connectivity airplane-mode disable; svc wifi enable; svc data enable</code></td></tr>
+      <tr><td><kbd>3</kbd></td><td>ตัดเน็ต Mac (ปิด Wi-Fi)</td><td><code>networksetup -setairportpower en0 off</code></td></tr>
+      <tr><td><kbd>4</kbd></td><td>เปิดเน็ต Mac</td><td><code>networksetup -setairportpower en0 on</code></td></tr>
+      <tr><td><kbd>5</kbd></td><td>บล็อก Vroom</td><td>เพิ่ม rule ใน AdGuard บน Mac</td></tr>
+      <tr><td><kbd>6</kbd></td><td>ปลดบล็อก Vroom</td><td>ลบ rule ใน AdGuard</td></tr>
+      <tr><td><kbd>a</kbd> / <kbd>Esc</kbd></td><td colspan="2">คืนทุกอย่าง (2 + 4 + 6)</td></tr>
+    </table></div>
+    <p class="lede">กดปุ่มบนหน้าเว็บ หรือกดเลขบนคีย์บอร์ดตอนหน้าเว็บเปิดอยู่ก็ได้ · "คืนเน็ตเองหลังตัด" ค่าเริ่มต้นคือ <b>10 วิ</b> เลือก 130 วิ, ไม่คืน หรือกรอกตัวเลขเองได้ · เคส "ตอนคุย" ใช้ <b>130 วิ</b> · เคสที่ต้องกด OK ตอนยังออฟไลน์ ให้เลือก <b>ไม่คืน</b></p>
+  </section>
+
+  <section>
+    <h2>4. เคสที่เทสต์</h2>
+    <p>เคสที่ไม่ได้เขียนเรื่อง DNS ให้ใช้ DNS ปกติ (DHCP) ทั้งสองเครื่อง</p>
+    <p>ทุกเคสที่กด <kbd>1</kbd> เลือก "วิธีตัดเน็ต" ได้ 2 แบบ ทำซ้ำอีกรอบด้วยอีกแบบได้:</p>
+    <ul>
+      <li><b>หลุดจากเครือข่าย</b> (ค่าเริ่มต้น) เหมือนเดินออกนอกระยะ Wi-Fi มือถือรู้ตัวทันที</li>
+      <li><b>Wi-Fi ยังต่อ แต่แอปใช้เน็ตไม่ได้</b> เลือกแอป Chrome (online-self) หรือ vdoc app เหมือนเน็ตบ้านล่มทั้งที่ Wi-Fi ยังเต็ม แอปอาจรู้ตัวช้ากว่า เพราะต้องรอ timeout · ผลของแบบนี้ยังไม่เคยเทสต์ ให้จดสิ่งที่เห็นไว้</li>
+    </ul>
+
+    <h3>รอคิว</h3>
+    <div class="case"><h3>ลูกค้าหลุด แล้วเน็ตกลับมา</h3><div class="meta">video-call-app · online-self</div>
+      <ol><li>เข้าคิว</li><li>กด <kbd>1</kbd> → เห็น popup "การเชื่อมต่อขาดหาย"</li><li>กด <kbd>2</kbd> โดยไม่กด OK</li></ol>
+      <div class="expect">คาดหวัง: popup ปิด + toast "เชื่อมต่อได้แล้ว กลับเข้าคิวใหม่เรียบร้อย" · status <b>queue-error</b></div></div>
+    <div class="case"><h3>ลูกค้ากด OK ตอนยังออฟไลน์</h3><div class="meta">video-call-app · online-self</div>
+      <ol><li>เข้าคิว → กด <kbd>1</kbd></li><li>กด OK บน popup</li><li>กด <kbd>2</kbd></li></ol>
+      <div class="expect">คาดหวัง: ไปหน้า thankyou ไม่เข้าคิวซ้ำ (online-self: popup ค้างไม่มีปุ่มจนเน็ตกลับ)</div></div>
+    <div class="case"><h3>adhoc หลุดตอนรอคิว</h3><div class="meta">video-call-app · บัญชี SHOP realm</div>
+      <ol><li>เข้าคิว adhoc → <kbd>1</kbd> → <kbd>2</kbd></li></ol>
+      <div class="expect">คาดหวัง: เหมือนเดิม session ถูกลบแล้วสร้างใหม่</div></div>
+
+    <h3>Agent ว่าง</h3>
+    <div class="case"><h3>agent หลุดตอน Available</h3><div class="meta">video-call-agent</div>
+      <ol><li>กด Available</li><li>กด <kbd>3</kbd> → รอ → กด <kbd>4</kbd></li></ol>
+      <div class="expect">คาดหวัง: แถบ "อินเทอร์เน็ตหลุด สถานะของคุณเป็น Offline" → เน็ตกลับ: "กรุณากด Available เพื่อรับสายต่อ"</div></div>
+
+    <h3>Handshake (หลัง agent กดรับสาย)</h3>
+    <div class="case"><h3>ลูกค้าหลุด</h3><div class="meta">video-call-app</div>
+      <ol><li>agent กดรับ</li><li>ตอนมือถือนับถอยหลัง กด <kbd>1</kbd></li></ol>
+      <div class="expect">คาดหวัง: status <b>customer_handshake_error</b> · ลูกค้า: popup วางสาย (30) → thankyou · agent: "ลูกค้าหลุดการเชื่อมต่อระหว่าง handshake" → ACW</div></div>
+    <div class="case"><h3>ลูกค้าหลุดที่หน้า consent</h3><div class="meta">online-self</div>
+      <ol><li>agent กดรับ</li><li>ตอนมือถืออยู่หน้า consent กด <kbd>1</kbd></li></ol>
+      <div class="expect">คาดหวัง: <b>customer_handshake_error</b> · error "Customer disconnected from Firebase while consent was pending"</div></div>
+    <div class="case"><h3>ลูกค้าหลุดหลังกดยอมรับ</h3><div class="meta">online-self</div>
+      <ol><li>กดยอมรับ consent แล้วกด <kbd>1</kbd> ทันที</li></ol>
+      <div class="expect">คาดหวัง: <b>customer_handshake_error</b> · error "Customer disconnected from Firebase during handshake"</div></div>
+    <div class="case"><h3>agent หลุด</h3><div class="meta">video-call-agent</div>
+      <ol><li>agent กดรับ แล้วกด <kbd>3</kbd></li></ol>
+      <div class="expect">คาดหวัง: <b>agent_handshake_error</b> · ลูกค้า: popup วางสาย (30) → thankyou</div></div>
+    <div class="case"><h3>Vroom ฝั่งลูกค้าต่อไม่ได้</h3><div class="meta">video-call-app · online-self · <b>ต้องตั้ง DNS มือถือ</b></div>
+      <ol>
+        <li>ตั้ง DNS มือถือเป็น IP ของ Mac (ดูข้อ 5)</li>
+        <li>กด <kbd>5</kbd> แล้วรอ 60 วิ</li>
+        <li>ปิดแอป หรือปิด Chrome บนมือถือ แล้วเปิดใหม่</li>
+        <li>เข้าคิว → agent กดรับ</li>
+        <li>จบเคส: กด <kbd>6</kbd> แล้วคืน DNS มือถือเป็น DHCP</li>
+      </ol>
+      <div class="expect">คาดหวัง: <b>customer_handshake_error</b> ภายใน 20–40 วิ</div></div>
+    <div class="case"><h3>Vroom ฝั่ง agent ต่อไม่ได้</h3><div class="meta">video-call-agent · <b>ต้องตั้ง DNS ของ Mac (ต้องมีรหัส admin — ถ้าไม่มีให้ข้ามเคสนี้)</b></div>
+      <ol>
+        <li>ตั้ง DNS ของ Mac (ดูข้อ 5)</li>
+        <li>กด <kbd>5</kbd> รอ 60 วิ แล้ว reload หน้า agent</li>
+        <li>ลูกค้าเข้าคิว → agent กดรับ</li>
+        <li>จบเคส: กด <kbd>6</kbd> แล้วคืน DNS ของ Mac</li>
+      </ol>
+      <div class="expect">คาดหวัง: <b>agent_handshake_error</b> · ลูกค้า: popup วางสาย (30) → thankyou</div></div>
+
+    <h3>กำลังคุย (ตั้งคืนเองหลัง 130 วิ)</h3>
+    <div class="case"><h3>ลูกค้าหลุด</h3><div class="meta">video-call-app · online-self</div>
+      <ol><li>ระหว่างคุย กด <kbd>1</kbd></li></ol>
+      <div class="expect">คาดหวัง: <b>heartbeat_timeout</b> · error "customer heartbeat timeout" · ลูกค้า → thankyou · agent → ACW</div></div>
+    <div class="case"><h3>agent หลุด</h3><div class="meta">video-call-agent</div>
+      <ol><li>ระหว่างคุย กด <kbd>3</kbd></li></ol>
+      <div class="expect">คาดหวัง: <b>heartbeat_timeout</b> · error "agent heartbeat timeout" · ลูกค้า → thankyou · agent → ACW</div></div>
+  </section>
+
+  <section>
+    <h2>5. ตั้ง DNS (เฉพาะ 2 เคสบล็อก Vroom)</h2>
+    <h3>มือถือ Android</h3>
+    <ol>
+      <li>Settings → Wi-Fi → กดค้างหรือกด ⚙️ ที่เครือข่ายที่ต่ออยู่ → Advanced / View more</li>
+      <li>IP settings → <b>Static</b> (IP, Gateway, Prefix มักกรอกให้แล้ว ถ้าว่างให้ใส่ IP ปัจจุบันของมือถือ, Gateway ของ router, Prefix 24)</li>
+      <li>DNS 1 = IP ของ Mac · DNS 2 = ลบให้ว่าง → Save</li>
+      <li>เช็คบนหน้าเว็บ กล่อง "บล็อก Vroom": แถวมือถือต้องขึ้น DNS เป็น IP ของ Mac และขึ้นว่า "จะโดนถ้าบล็อก"</li>
+      <li>คืนค่า: IP settings → <b>DHCP</b> → Save</li>
+    </ol>
+    <h3>MacBook</h3>
+    <ol>
+      <li>กดปุ่ม <b>ให้ Mac โดนบล็อกด้วย</b> ในกล่อง "บล็อก Vroom" แล้วใส่รหัสผ่านของ Mac</li>
+      <li>เช็ค: แถว MacBook ขึ้นว่า "จะโดนถ้าบล็อก"</li>
+      <li>คืนค่า: กดปุ่ม <b>คืน DNS ของ Mac</b> แล้วใส่รหัสผ่าน</li>
+    </ol>
+    <div class="note"><b>ทำไม่ได้:</b> บล็อก Firebase อย่างเดียว (Firebase ต่อค้างไว้ตั้งแต่เปิดแอป การบล็อก DNS ตัดของที่ต่ออยู่แล้วไม่ได้) · <b>Mac แบบ Wi-Fi ต่ออยู่แต่ไม่มีอินเทอร์เน็ต</b> netcut ทำให้ไม่ได้ ให้จำลองใน Chrome ของ agent: DevTools → Network → Offline (ภาพและเสียงวิดีโอคอลยังไหลต่อ)</div>
+    <div class="note"><b>ระวัง:</b> ตอนมือถือใช้ DNS ของ Mac ห้ามตัดเน็ต Mac (ปุ่ม <kbd>3</kbd> จะถูกกันไว้) และห้ามปิด netcut ไม่งั้นมือถือเปิดเว็บไม่ได้ คืน DNS ก่อนทุกครั้ง</div>
+  </section>
+
+  <section>
+    <h2>6. จบการเทสต์</h2>
+    <ol>
+      <li>คืน DNS มือถือเป็น DHCP และกด <b>คืน DNS ของ Mac</b> (ถ้าตั้งไว้) · ทั้งสองแถวในกล่อง "บล็อก Vroom" ต้องขึ้น "ไม่โดน"</li>
+      <li>กด <b>คืนทุกอย่าง</b></li>
+      <li>กลับไปที่ terminal ที่รัน <code>npm start</code> แล้วกด <code>Ctrl-C</code></li>
+      <li><code>npm run stop</code> ปิด AdGuard (Docker Desktop ปิดทิ้งได้ถ้าไม่ใช้แล้ว)</li>
+    </ol>
+  </section>
+</main>

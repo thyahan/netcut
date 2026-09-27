@@ -1,0 +1,13 @@
+{
+  "name": "netcut",
+  "private": true,
+  "description": "Network-cut panel for manual vdoc connection-loss testing",
+  "scripts": {
+    "start": "./start.sh",
+    "cli": "node cli.mjs",
+    "stop": "docker compose down"
+  },
+  "bin": {
+    "netcut": "cli.mjs"
+  }
+}

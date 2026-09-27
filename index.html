@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NetCut</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+:root {
+  --bg: #F4F6F5; --ink: #1C2326; --mute: #6B767B; --line: #DCE2E0; --btn: #FFFFFF; --btn-hover: #EDF1EF;
+  --on: #1F8A4C; --off: #CC3A33; --warn: #A56A00;
+  --sans: "IBM Plex Sans Thai", system-ui, -apple-system, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #15191B; --ink: #E4EAEC; --mute: #8E9BA0; --line: #2C3538; --btn: #1D2326; --btn-hover: #263034;
+    --on: #5CC98A; --off: #F0847D; --warn: #E3B24E;
+  }
+}
+* { box-sizing: border-box }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 var(--sans); padding: 28px 16px 56px }
+.page { max-width: 1280px; margin: 0 auto }
+.layout { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 3fr); gap: 48px; align-items: start }
+.side { position: sticky; top: 20px; border-top: 1px solid var(--line); padding-top: 22px }
+@media (max-width: 900px) { .layout { grid-template-columns: 1fr; gap: 0 } .side { position: static } }
+.limit { font-size: 13px; color: var(--mute); background: var(--btn); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; margin-top: 14px }
+.limit b { color: var(--ink); font-weight: 600 }
+.limit ol { margin: 4px 0 0; padding-left: 20px }
+.limit p { margin: 8px 0 0 }
+h1 { font-size: 20px; font-weight: 600; margin: 0 }
+h2 { font-size: 15px; font-weight: 600; margin: 0 }
+small, .mute { color: var(--mute) }
+.mono { font-family: var(--mono) }
+
+header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-bottom: 20px }
+.health { display: flex; gap: 14px; font-size: 13px; color: var(--mute); flex-wrap: wrap }
+.health i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: 1px }
+
+.alert { color: var(--off); font-size: 14px; padding: 10px 0 14px }
+
+section { border-top: 1px solid var(--line); padding: 22px 0 }
+.row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap }
+.status { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 600; margin: 10px 0 4px }
+.status i { width: 12px; height: 12px; border-radius: 50% }
+.status.on { color: var(--on) } .status.on i { background: var(--on) }
+.status.off { color: var(--off) } .status.off i { background: var(--off) }
+.status.na { color: var(--mute); font-size: 16px } .status.na i { background: var(--mute) }
+.status.warn { color: var(--warn) } .status.warn i { background: var(--warn) }
+.facts { font-size: 13px; color: var(--mute); margin-bottom: 14px }
+
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center }
+button { font: inherit; color: var(--ink); background: var(--btn); border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px }
+button:hover:not(:disabled) { background: var(--btn-hover) }
+button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }
+button:disabled { opacity: .4; cursor: not-allowed }
+kbd { font: 500 11px var(--mono); color: var(--mute); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px }
+
+.auto { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; color: var(--mute); margin-top: 12px }
+.auto button { padding: 2px 10px; font-size: 13px; border-radius: 999px }
+.auto button[aria-pressed="true"] { border-color: var(--on); color: var(--on) }
+.custom { display: inline-flex; align-items: center; gap: 6px; margin-left: 4px }
+.custom input { width: 72px; font: inherit; font-size: 13px; color: var(--ink); background: var(--btn); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px }
+.custom input.active { border-color: var(--on); color: var(--on) }
+.countdown { color: var(--warn); font-family: var(--mono) }
+.method { border: 0; margin: 0 0 14px; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 14px }
+.method legend { font-size: 13px; color: var(--mute); padding: 0; margin-bottom: 4px }
+.method label { display: flex; align-items: center; gap: 8px; cursor: pointer }
+.method input { accent-color: var(--ink); margin: 0 }
+.method select { font: inherit; font-size: 13px; color: var(--ink); background: var(--btn); border: 1px solid var(--line); border-radius: 6px; padding: 2px 6px; margin-left: 4px }
+.method select:disabled { opacity: .4 }
+.note { font-size: 13px; color: var(--off); margin-top: 10px }
+
+.dnsip { font-size: 13px; color: var(--mute); margin: 16px 0 8px }
+.dnsip b { font: 500 18px var(--mono); color: var(--ink); margin-left: 6px }
+.who { list-style: none; margin: 0 0 12px; padding: 0; font-size: 14px }
+.who li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px dashed var(--line) }
+.who li:last-child { border-bottom: 0 }
+.who .hit { color: var(--warn); font-weight: 500 }
+
+.log { list-style: none; margin: 10px 0 0; padding: 0; font-size: 14px; max-height: calc(100vh - 120px); overflow-y: auto }
+.log li { display: grid; grid-template-columns: 72px 18px 1fr; gap: 8px; padding: 3px 0 }
+.log time { font: 500 13px var(--mono); color: var(--mute) }
+.log .ok { color: var(--on) } .log .bad { color: var(--off) }
+.log .err { display: block; color: var(--off); font-size: 13px }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>NetCut</h1>
+    <div class="health" id="health"></div>
+    <button data-id="restore-all">คืนทุกอย่าง <kbd>Esc</kbd></button>
+  </header>
+  <div class="alert" id="alert" hidden></div>
+  <div class="layout">
+  <main>
+
+  <section>
+    <div class="row"><h2>มือถือ · ลูกค้า</h2><small id="phone-name">–</small></div>
+    <div class="status na" id="phone-status"><i></i><span>กำลังโหลด…</span></div>
+    <div class="facts" id="phone-facts"></div>
+    <fieldset class="method">
+      <legend>วิธีตัดเน็ต</legend>
+      <label><input type="radio" name="method" value="airplane" checked> หลุดจากเครือข่าย <small>(โหมดเครื่องบิน + ปิด Wi-Fi)</small></label>
+      <label><input type="radio" name="method" value="app"> Wi-Fi ยังต่อ แต่แอปใช้เน็ตไม่ได้
+        <select id="app" aria-label="แอปที่จะตัด" disabled>
+          <option value="chrome">Chrome (online-self)</option>
+          <option value="vdoc">vdoc app</option>
+        </select>
+      </label>
+    </fieldset>
+    <div class="actions">
+      <button data-id="phone-cut">ตัดเน็ต <kbd>1</kbd></button>
+      <button data-id="phone-restore">เปิดเน็ต <kbd>2</kbd></button>
+    </div>
+    <div class="auto" data-for="phone-cut">คืนเน็ตเองหลังตัด
+      <button data-sec="0" aria-pressed="false">ไม่คืน</button>
+      <button data-sec="10" aria-pressed="true">10 วิ</button>
+      <button data-sec="130" aria-pressed="false">130 วิ</button>
+      <label class="custom">หรือ <input type="number" min="1" max="3600" inputmode="numeric" id="sec-phone-cut" aria-label="จำนวนวินาทีที่จะคืนเน็ตเอง" placeholder="กรอก"> วิ</label>
+      <span class="countdown" id="cd-phone-cut"></span>
+    </div>
+  </section>
+
+  <section>
+    <div class="row"><h2>MacBook · agent</h2><small>Wi-Fi ของเครื่องนี้</small></div>
+    <div class="status na" id="mac-status"><i></i><span>กำลังโหลด…</span></div>
+    <div class="facts" id="mac-facts"></div>
+    <div class="actions">
+      <button data-id="mac-cut">ตัดเน็ต <kbd>3</kbd></button>
+      <button data-id="mac-restore">เปิดเน็ต <kbd>4</kbd></button>
+    </div>
+    <div class="note" id="mac-note" hidden>ตัดเน็ต Mac ไม่ได้ตอนนี้: มือถือใช้ DNS ของ Mac อยู่ ให้คืน DNS มือถือเป็น DHCP ก่อน</div>
+    <div class="auto" data-for="mac-cut">คืนเน็ตเองหลังตัด
+      <button data-sec="0" aria-pressed="false">ไม่คืน</button>
+      <button data-sec="10" aria-pressed="true">10 วิ</button>
+      <button data-sec="130" aria-pressed="false">130 วิ</button>
+      <label class="custom">หรือ <input type="number" min="1" max="3600" inputmode="numeric" id="sec-mac-cut" aria-label="จำนวนวินาทีที่จะคืนเน็ตเอง" placeholder="กรอก"> วิ</label>
+      <span class="countdown" id="cd-mac-cut"></span>
+    </div>
+    <div class="limit">
+      <b>Wi-Fi ต่ออยู่แต่ไม่มีอินเทอร์เน็ต</b> · netcut ทำให้ไม่ได้ ให้จำลองใน Chrome ของหน้า agent:
+      <ol><li>กด <kbd>⌥ ⌘ I</kbd> เปิด DevTools → แท็บ Network</li><li>ช่อง throttling (ปกติเขียนว่า No throttling) เลือก <b>Offline</b></li><li>จบเคส เลือกกลับเป็น No throttling</li></ol>
+      <p>ข้อจำกัด: ตัด Firebase และ HTTP ได้ แต่ภาพและเสียงวิดีโอคอลยังไหลต่อ</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="row"><h2>บล็อก Vroom</h2><small>เฉพาะเคส Vroom ต่อไม่ได้ตอน handshake</small></div>
+    <div class="status na" id="vroom-status"><i></i><span>–</span></div>
+    <div class="facts">มีผลเฉพาะเครื่องที่ตั้ง DNS เป็น IP ของ Mac · บล็อกก่อนเริ่มเคสอย่างน้อย 60 วิ</div>
+    <div class="actions">
+      <button data-id="vroom-arm">บล็อก <kbd>5</kbd></button>
+      <button data-id="vroom-disarm">ปลดบล็อก <kbd>6</kbd></button>
+    </div>
+    <div class="dnsip">ตั้ง DNS มือถือเป็น<b id="mac-ip">–</b></div>
+    <ul class="who">
+      <li><span>มือถือ <small id="phone-dns"></small></span><span id="phone-hit">–</span></li>
+      <li><span>MacBook <small id="mac-dns"></small></span><span id="mac-hit">–</span></li>
+    </ul>
+    <div class="actions">
+      <button data-id="mac-dns-block">ให้ Mac โดนบล็อกด้วย</button>
+      <button data-id="mac-dns-reset">คืน DNS ของ Mac</button>
+    </div>
+    <div class="limit"><b>2 ปุ่มนี้ต้องใช้รหัส admin ของ Mac</b> · ถ้าไม่มีสิทธิ์ ข้ามเคส "Vroom ฝั่ง agent ต่อไม่ได้" ไป (ใช้ ตัดเน็ต Mac ตอน handshake แทน ได้ status agent_handshake_error เหมือนกัน)</div>
+    <div class="limit"><b>บล็อก Firebase อย่างเดียวไม่ได้</b> · Firebase เปิดการเชื่อมต่อค้างไว้ตั้งแต่เปิดแอปหรือหน้าเว็บ การบล็อกที่ DNS มีผลแค่การเชื่อมต่อครั้งใหม่ จึงตัด Firebase ที่ต่ออยู่แล้วไม่ได้ · บล็อก Vroom ได้เพราะ Vroom เพิ่งเริ่มต่อตอน handshake</div>
+  </section>
+
+  </main>
+  <aside class="side">
+    <h2>สิ่งที่เพิ่งทำ</h2>
+    <ol class="log" id="log"><li class="mute">ยังไม่มี</li></ol>
+  </aside>
+  </div>
+</div>
+
+<script>
+const KEYS = { 1: 'phone-cut', 2: 'phone-restore', 3: 'mac-cut', 4: 'mac-restore', 5: 'vroom-arm', 6: 'vroom-disarm', Escape: 'restore-all' };
+const LABEL = {
+  'phone-cut': 'ตัดเน็ตมือถือ', 'phone-restore': 'เปิดเน็ตมือถือ', 'mac-cut': 'ตัดเน็ต Mac', 'mac-restore': 'เปิดเน็ต Mac',
+  'vroom-arm': 'บล็อก Vroom', 'vroom-disarm': 'ปลดบล็อก Vroom', 'restore-all': 'คืนทุกอย่าง',
+  'mac-dns-block': 'ให้ Mac โดนบล็อกด้วย', 'mac-dns-reset': 'คืน DNS ของ Mac',
+};
+const APP_LABEL = { chrome: 'Chrome', vdoc: 'vdoc app' };
+const method = () => document.querySelector('input[name="method"]:checked').value;
+document.querySelectorAll('input[name="method"]').forEach((r) => r.addEventListener('change', () => ($('#app').disabled = method() !== 'app')));
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const restoreSec = { 'phone-cut': 10, 'mac-cut': 10 };
+
+// chips or a typed number; whichever was touched last wins
+document.querySelectorAll('.auto').forEach((box) => {
+  const id = box.dataset.for;
+  const input = box.querySelector('input');
+  const chips = box.querySelectorAll('button');
+  chips.forEach((b) => b.addEventListener('click', () => {
+    restoreSec[id] = Number(b.dataset.sec);
+    chips.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    input.value = '';
+    input.classList.remove('active');
+  }));
+  input.addEventListener('input', () => {
+    const v = Math.round(Number(input.value));
+    if (!input.value || !(v > 0)) return;
+    restoreSec[id] = v;
+    chips.forEach((x) => x.setAttribute('aria-pressed', 'false'));
+    input.classList.add('active');
+  });
+});
+
+async function fire(id) {
+  const btn = document.querySelector(`button[data-id="${id}"]`);
+  if (!btn || btn.disabled) return;
+  btn.disabled = true;
+  try {
+    await fetch('/api/run/' + id, { method: 'POST', body: JSON.stringify({ autoRestoreSec: restoreSec[id] || 0, method: method(), app: $('#app').value }) });
+  } catch {
+    showAlert(['ติดต่อ netcut ไม่ได้ ดูว่าหน้าต่าง npm start ยังเปิดอยู่']);
+  } finally {
+    btn.disabled = false;
+    poll();
+  }
+}
+document.querySelectorAll('button[data-id]').forEach((b) => b.addEventListener('click', () => fire(b.dataset.id)));
+document.addEventListener('keydown', (e) => {
+  if (e.target.matches('input, select, textarea') && e.key !== 'Escape') return; // typing a number is not a shortcut
+  const id = KEYS[e.key];
+  if (!id || e.repeat || e.metaKey || e.ctrlKey) return;
+  e.preventDefault();
+  fire(id);
+});
+
+function showAlert(list) {
+  $('#alert').hidden = !list.length;
+  $('#alert').textContent = list.join(' · ');
+}
+function setStatus(el, kind, text) {
+  el.className = 'status ' + kind;
+  el.querySelector('span').textContent = text;
+}
+const onoff = (v) => (v === null || v === undefined ? '?' : v ? 'เปิด' : 'ปิด');
+
+function render(s) {
+  const dot = (ok, label) => `<span><i style="background:var(${ok ? '--on' : '--off'})"></i>${label}</span>`;
+  $('#health').innerHTML = [dot(s.adb, 'มือถือต่อ USB'), dot(s.adguardUp, 'AdGuard'), dot(s.relayUp, 'DNS relay')].join('');
+
+  // status = real reachability (ping), not whether a radio is switched on
+  if (!s.adb) {
+    setStatus($('#phone-status'), 'na', 'ไม่เจอมือถือ · เสียบ USB และเปิด USB debugging');
+    $('#phone-name').textContent = '';
+    $('#phone-facts').textContent = '';
+  } else {
+    const blocked = s.phoneAppsBlocked || [];
+    if (blocked.length) setStatus($('#phone-status'), 'off', `ตัดเน็ตแอป ${blocked.map((a) => APP_LABEL[a] || a).join(', ')} · Wi-Fi ยังต่อ`);
+    else setStatus($('#phone-status'), s.phoneOnline ? 'on' : 'off', s.phoneOnline ? 'ออนไลน์' : 'ออฟไลน์');
+    $('#phone-name').textContent = `${s.phoneModel} · Android ${s.phoneAndroid}`;
+    $('#phone-facts').textContent = `Wi-Fi ${onoff(s.phoneWifi)}${s.phoneSsid ? ` (${s.phoneSsid})` : ''} · Data ${onoff(s.phoneData)} · โหมดเครื่องบิน ${onoff(s.phoneAirplane)}`;
+  }
+  document.querySelectorAll('[data-id^="phone-"]').forEach((b) => (b.disabled = !s.adb));
+
+  setStatus($('#mac-status'), s.macOnline ? 'on' : 'off', s.macOnline ? 'ออนไลน์' : s.macWifi ? 'ออฟไลน์ · Wi-Fi ยังต่อ' : 'ออฟไลน์');
+  $('#mac-facts').textContent = `Wi-Fi ${onoff(s.macWifi)}`;
+  const guard = !!(s.phoneViaMac && s.macWifi);
+  $('[data-id="mac-cut"]').disabled = guard;
+  $('#mac-note').hidden = !guard;
+
+  for (const id of ['phone-cut', 'mac-cut']) {
+    const t = s.timers?.[id];
+    $('#cd-' + id).textContent = t !== undefined ? `เปิดคืนใน ${t} วิ` : '';
+  }
+
+  if (!s.adguardUp) setStatus($('#vroom-status'), 'na', 'AdGuard ไม่ทำงาน');
+  else setStatus($('#vroom-status'), s.adguardArmed ? 'warn' : 'on', s.adguardArmed ? 'กำลังบล็อก' : 'ไม่ได้บล็อก');
+  $('#mac-ip').textContent = s.macIp ?? '–';
+  $('#phone-dns').textContent = s.phoneDns ? `DNS ${s.phoneDns}` : '';
+  $('#mac-dns').textContent = `DNS ${s.macDns === 'DHCP' ? 'ค่าเดิม' : s.macDns}`;
+  const hit = (el, via) => {
+    el.textContent = via ? (s.adguardArmed ? 'โดนบล็อก' : 'จะโดนถ้าบล็อก') : 'ไม่โดน';
+    el.className = via ? 'hit' : 'mute';
+  };
+  hit($('#phone-hit'), s.phoneViaMac);
+  hit($('#mac-hit'), s.macViaMac);
+
+  const warn = [];
+  if (!s.adguardUp) warn.push('AdGuard ไม่ทำงาน ปิดแล้วรัน npm start ใหม่');
+  if ((s.phoneViaMac || s.macViaMac) && !s.relayUp) warn.push('DNS relay ไม่ทำงาน เครื่องที่ใช้ DNS ของ Mac จะเปิดเว็บไม่ได้');
+  if (s.adguardArmed && !s.phoneViaMac && !s.macViaMac) warn.push('บล็อก Vroom อยู่ แต่ยังไม่มีเครื่องไหนใช้ DNS ของ Mac');
+  showAlert(warn);
+
+  // server sends newest first: "ISO \t epoch \t id(note) \t code \t err"
+  const rows = (s.log || []).map((l) => {
+    const [, epoch, idNote = '', code, err] = l.split('\t');
+    const [, id, note] = idNote.match(/^([\w-]+)(.*)$/) || [, idNote, ''];
+    const ok = code === '0';
+    const app = note.match(/\[app (\w+)\]/)?.[1];
+    const tag = (app ? ` · แอป ${APP_LABEL[app] || app}` : '') + (note.includes('auto') ? ' (อัตโนมัติ)' : note.includes('exit') ? ' (ตอนปิดโปรแกรม)' : '');
+    return `<li><time>${new Date(Number(epoch)).toLocaleTimeString('en-GB')}</time><span class="${ok ? 'ok' : 'bad'}">${ok ? '✓' : '✗'}</span><span>${esc(LABEL[id] || id)}${tag}${!ok && err ? `<span class="err">${esc(err)}</span>` : ''}</span></li>`;
+  });
+  $('#log').innerHTML = rows.length ? rows.join('') : '<li class="mute">ยังไม่มี</li>';
+}
+
+async function poll() {
+  try {
+    render(await fetch('/api/state').then((r) => r.json()));
+  } catch {
+    showAlert(['ติดต่อ netcut ไม่ได้ ดูว่าหน้าต่าง npm start ยังเปิดอยู่']);
+  }
+}
+poll();
+setInterval(poll, 2000);
+</script>
+</body>
+</html>
