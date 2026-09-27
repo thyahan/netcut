@@ -55,7 +55,7 @@ th{font-weight:600}
   <section>
     <h2>1. ติดตั้งครั้งแรก</h2>
     <ol>
-      <li>ติดตั้ง <b>Docker Desktop</b> (โหลดจาก docker.com หรือ <code>brew install --cask docker</code>) แล้วเปิดครั้งแรกให้เสร็จ</li>
+      <li>ติดตั้ง <b>Docker Desktop</b> (โหลดจาก docker.com หรือ <code>brew install --cask docker</code>) แล้วเปิดครั้งแรกให้เสร็จ · <b>ไม่ต้องตั้ง port forwarding หรือค่าอื่นใน Docker Desktop</b> <code>npm start</code> จัดการให้หมด</li>
       <li>ติดตั้ง Node และ adb:
         <pre>brew install node
 brew install --cask android-platform-tools</pre></li>
@@ -68,9 +68,9 @@ brew install --cask android-platform-tools</pre></li>
     <h2>2. เริ่มทุกครั้ง</h2>
     <ol>
       <li>เปิด <b>Docker Desktop</b> (ถ้ายังไม่เปิด <code>npm start</code> จะเปิดให้)</li>
-      <li>ครั้งแรกเท่านั้น: <code>git clone git@github.com:thyahan/netcut.git</code></li>
+      <li>ครั้งแรกเท่านั้น: เปิด Terminal ที่โฟลเดอร์ home แล้ว <code>git clone git@github.com:thyahan/netcut.git</code> (ให้อยู่ใต้โฟลเดอร์ home เช่น <code>~/netcut</code> เพราะ Docker Desktop แชร์โฟลเดอร์นี้ให้อยู่แล้ว)</li>
       <li><code>cd netcut</code> แล้ว <code>npm start</code> (ครั้งแรกใช้เวลาสักพัก เพราะโหลด AdGuard)</li>
-      <li>ถ้า macOS ถามว่าให้ <code>node</code> รับการเชื่อมต่อ ให้กด <b>Allow</b></li>
+      <li>ถ้า macOS ถามว่าให้ <code>node</code> รับการเชื่อมต่อ ให้กด <b>Allow</b> (ต้องอนุญาต ไม่งั้นมือถือใช้ DNS ของ Mac ในเคสบล็อก Vroom ไม่ได้)</li>
       <li>หน้าเว็บ netcut จะเปิดขึ้นมาเอง (ถ้าไม่ขึ้น เปิด <code>http://127.0.0.1:8790</code>) · ปล่อยหน้าต่าง terminal ไว้ อย่าปิด</li>
       <li>มุมขวาบนต้องมีจุดเขียว 3 จุด: <b>มือถือต่อ USB</b>, <b>AdGuard</b>, <b>DNS relay</b></li>
       <li><b>IP ของ Mac</b> อยู่ในกล่อง "บล็อก Vroom" ตรง "ตั้ง DNS มือถือเป็น" ใช้กับ 2 เคสบล็อก Vroom</li>
