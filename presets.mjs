@@ -63,9 +63,11 @@ async function agSetRules(rules) {
   if (!r.ok) throw new Error(`AdGuard set_rules failed: HTTP ${r.status}`);
 }
 // what AdGuard itself answers (not what a device has cached)
+// asked through the Mac's :53 relay (UDP there, TCP to AdGuard) — colima's own UDP forward to 1053 is unreliable
 async function agResolve(host) {
+  const ip = await getMacIp();
   const res = new Resolver({ timeout: 2000, tries: 1 });
-  res.setServers([AG_DNS]);
+  res.setServers([ip ? `${ip}:53` : AG_DNS]);
   return res.resolve4(host).then((a) => a[0]).catch((e) => e.code);
 }
 let macIp;

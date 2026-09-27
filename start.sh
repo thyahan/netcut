@@ -35,6 +35,14 @@ if [ "$(curl -s -o /dev/null -w '%{http_code}' -m 5 http://127.0.0.1:3300/contro
 fi
 for i in $(seq 1 30); do curl -s -o /dev/null -m 2 http://127.0.0.1:8792/ && break; sleep 1; done
 [ -f adguard/.env ] || { echo "✘ AdGuard ตั้งค่าไว้แล้วแต่ไม่มี adguard/.env — รัน: docker compose down && rm -rf adguard/conf adguard/work แล้ว npm start ใหม่"; exit 1; }
+# netcut only needs its own rules: drop the default ad blocklists (180k+ rules that delay every rule change)
+set -a; . adguard/.env; set +a
+curl -s -m 5 -u "$ADGUARD_USER:$ADGUARD_PASS" http://127.0.0.1:8792/control/filtering/status \
+  | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{for(const f of JSON.parse(d).filters||[])console.log(f.url)})' \
+  | while read -r url; do
+      curl -s -m 5 -o /dev/null -u "$ADGUARD_USER:$ADGUARD_PASS" -H 'Content-Type: application/json' \
+        http://127.0.0.1:8792/control/filtering/remove_url -d "{\"url\":\"$url\",\"whitelist\":false}"
+    done
 if ! dig @127.0.0.1 -p 1053 +tcp +short +time=2 +tries=3 example.com | grep -q .; then
   echo "✘ AdGuard ไม่ตอบ DNS ที่ port 1053 — ดู log: docker logs netcut-adguard"
   exit 1
