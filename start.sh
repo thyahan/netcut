@@ -2,6 +2,7 @@
 # npm start: colima -> AdGuard (docker compose) -> first-run AdGuard setup -> netcut web + DNS relay
 set -euo pipefail
 cd "$(dirname "$0")"
+mkdir -p adguard/conf adguard/work
 
 need() { command -v "$1" >/dev/null || { echo "✘ ไม่มี $1 — ติดตั้ง: $2"; exit 1; }; }
 need node   "brew install node"
