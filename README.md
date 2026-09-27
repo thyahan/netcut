@@ -3,13 +3,13 @@
 ปุ่มตัดเน็ตสำหรับ manual test เคสเน็ตหลุดของ vdoc (มือถือ Android ผ่าน USB + MacBook)
 
 ```
-git clone git@github.com:thyahan/netcut.git && cd netcut
+gh repo clone thyahan/netcut ~/netcut && cd ~/netcut   # หรือ git clone git@github.com:thyahan/netcut.git
 npm start                 # Docker Desktop + AdGuard (docker compose) + DNS relay + หน้าเว็บ http://127.0.0.1:8790
 npm run cli -- -w         # (ไม่บังคับ) โหมดคีย์บอร์ดใน terminal
 npm run stop              # ปิด AdGuard
 ```
 
-คู่มือทีละขั้นสำหรับ QA: เปิดไฟล์ `manual.html` ใน browser (ดับเบิลคลิกใน Finder หรือ `open manual.html`)
+คู่มือทีละขั้นสำหรับ QA (รวมการเตรียมเครื่องตั้งแต่ติดตั้งโปรแกรม): เปิดไฟล์ `manual.html` ใน browser (ดับเบิลคลิกใน Finder หรือ `open manual.html`)
 
 ไม่ต้องตั้ง port forwarding ใน Docker Desktop · clone ไว้ใต้โฟลเดอร์ home
 

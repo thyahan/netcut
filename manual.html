@@ -44,6 +44,17 @@ table{border-collapse:collapse;width:100%;font-size:15px}
 td,th{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
 th{font-weight:600}
 .table-wrap{overflow-x:auto}
+.step{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 16px 12px;margin:12px 0}
+.step h3{margin:0 0 6px;font-size:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.step p{margin:4px 0}
+.step ol{margin:4px 0 8px}
+.hint{font-size:14px;color:var(--muted)}
+.badge{font-size:12px;font-weight:600;color:var(--warn);background:var(--warn-soft);border-radius:999px;padding:1px 9px}
+.codebox{position:relative;margin:6px 0 10px}
+.codebox pre{margin:0;padding-right:78px;white-space:pre-wrap;word-break:break-all;overflow-x:visible}
+.copy{position:absolute;top:7px;right:7px;font:600 12px var(--body);color:var(--accent);background:var(--soft);border:0;border-radius:6px;padding:5px 10px;cursor:pointer}
+.copy:hover{filter:brightness(.95)}
+.copy:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 </style>
 
 <main>
@@ -53,29 +64,74 @@ th{font-weight:600}
   </header>
 
   <section>
-    <h2>1. ติดตั้งครั้งแรก</h2>
-    <ol>
-      <li>ติดตั้ง <b>Docker Desktop</b> (โหลดจาก docker.com หรือ <code>brew install --cask docker</code>) แล้วเปิดครั้งแรกให้เสร็จ · <b>ไม่ต้องตั้ง port forwarding หรือค่าอื่นใน Docker Desktop</b> <code>npm start</code> จัดการให้หมด</li>
-      <li>ติดตั้ง Node และ adb:
-        <pre>brew install node
-brew install --cask android-platform-tools</pre></li>
-      <li>มือถือ: เปิด <b>Developer options → USB debugging</b> แล้ว<b>เสียบสาย USB</b> กับ Mac กดยอมรับบนมือถือ (netcut สั่งมือถือผ่านสายนี้)</li>
-      <li>ถ้ามือถือถามให้อนุญาต USB debugging จาก Mac เครื่องนี้ ให้ติ๊ก "Always allow" แล้วกด Allow</li>
-    </ol>
+    <h2>1. เตรียมเครื่อง (ทำครั้งเดียว)</h2>
+    <p class="lede">เปิดแอป <b>Terminal</b> (กด <kbd>⌘</kbd> + <kbd>Space</kbd> พิมพ์ Terminal) แล้วทำทีละขั้น · กดปุ่ม <b>Copy</b> แล้ววางใน Terminal กด Enter</p>
+
+    <div class="step">
+      <h3>ขั้นที่ 1 · เช็คว่าเครื่องมีอะไรแล้วบ้าง</h3>
+      <pre>for c in brew node adb docker gh; do printf "%-7s" $c; command -v $c >/dev/null && echo "มีแล้ว" || echo "ยังไม่มี"; done</pre>
+      <p class="hint">ตัวที่ขึ้น "มีแล้ว" ข้ามขั้นนั้นได้เลย</p>
+    </div>
+
+    <div class="step">
+      <h3>ขั้นที่ 2 · Homebrew <span class="badge">ต้องใช้รหัส admin</span></h3>
+      <p>ตัวติดตั้งโปรแกรมของ Mac ที่ขั้นอื่นใช้</p>
+      <pre>/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"</pre>
+      <p>ติดตั้งเสร็จ ให้รันบรรทัดนี้ต่อ (ทำให้พิมพ์ <code>brew</code> ได้ทุกครั้งที่เปิด Terminal)</p>
+      <pre>echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile && eval "$(/opt/homebrew/bin/brew shellenv)"</pre>
+      <p class="hint">เช็ค: <code>brew -v</code> ต้องขึ้นเลขเวอร์ชัน · ถ้าไม่มีรหัส admin ให้ IT ติดตั้งขั้นนี้กับขั้นที่ 4 ให้</p>
+    </div>
+
+    <div class="step">
+      <h3>ขั้นที่ 3 · Node, adb และ GitHub CLI</h3>
+      <p>Node ใช้รัน netcut · adb ใช้สั่งมือถือผ่านสาย USB · GitHub CLI ใช้ดาวน์โหลด netcut</p>
+      <pre>brew install node gh && brew install --cask android-platform-tools</pre>
+      <p class="hint">เช็ค: <code>node -v</code> และ <code>adb version</code> ต้องขึ้นเลขเวอร์ชันทั้งคู่</p>
+    </div>
+
+    <div class="step">
+      <h3>ขั้นที่ 4 · Docker Desktop <span class="badge">ต้องใช้รหัส admin</span></h3>
+      <pre>brew install --cask docker</pre>
+      <ol>
+        <li>เปิดแอป <b>Docker</b> จาก Applications</li>
+        <li>กดยอมรับเงื่อนไข · หน้า sign in กด <b>Skip</b> / Continue without signing in ได้</li>
+        <li>รอจนไอคอนวาฬบนแถบเมนูหยุดขยับ</li>
+      </ol>
+      <p class="hint">เช็ค: <code>docker compose version</code> ต้องขึ้นเลขเวอร์ชัน · ไม่ต้องตั้ง port forwarding หรือค่าอื่นใน Docker Desktop</p>
+    </div>
+
+    <div class="step">
+      <h3>ขั้นที่ 5 · ดาวน์โหลด netcut</h3>
+      <p>ต้องมีบัญชี GitHub ที่ได้รับเชิญเข้า repo แล้ว (ขอจากเจ้าของ repo)</p>
+      <pre>gh auth login --web</pre>
+      <p>กด Enter ตามที่ถาม จะเปิด browser ให้ login GitHub · เสร็จแล้วรัน</p>
+      <pre>gh repo clone thyahan/netcut ~/netcut</pre>
+      <p class="hint">netcut จะอยู่ที่ <code>~/netcut</code> (ต้องอยู่ใต้โฟลเดอร์ home)</p>
+    </div>
+
+    <div class="step">
+      <h3>ขั้นที่ 6 · เปิด USB debugging บนมือถือ</h3>
+      <ol>
+        <li>Settings → About phone → Software information → กด <b>Build number</b> 7 ครั้ง จนขึ้นว่าเปิด Developer mode แล้ว</li>
+        <li>Settings → <b>Developer options</b> → เปิด <b>USB debugging</b></li>
+        <li>เสียบสาย USB กับ Mac · มือถือถาม "Allow USB debugging?" ติ๊ก <b>Always allow</b> แล้วกด <b>Allow</b></li>
+      </ol>
+      <pre>adb devices</pre>
+      <p class="hint">เช็ค: ต้องเห็น 1 บรรทัดลงท้ายด้วย <code>device</code> · ถ้าขึ้น <code>unauthorized</code> ให้ดูที่มือถือแล้วกด Allow</p>
+    </div>
   </section>
 
   <section>
     <h2>2. เริ่มทุกครั้ง</h2>
     <ol>
-      <li>เปิด <b>Docker Desktop</b> (ถ้ายังไม่เปิด <code>npm start</code> จะเปิดให้)</li>
-      <li>ครั้งแรกเท่านั้น: เปิด Terminal ที่โฟลเดอร์ home แล้ว <code>git clone git@github.com:thyahan/netcut.git</code> (ให้อยู่ใต้โฟลเดอร์ home เช่น <code>~/netcut</code> เพราะ Docker Desktop แชร์โฟลเดอร์นี้ให้อยู่แล้ว)</li>
-      <li><code>cd netcut</code> แล้ว <code>npm start</code> (ครั้งแรกใช้เวลาสักพัก เพราะโหลด AdGuard)</li>
-      <li>ถ้า macOS ถามว่าให้ <code>node</code> รับการเชื่อมต่อ ให้กด <b>Allow</b> (ต้องอนุญาต ไม่งั้นมือถือใช้ DNS ของ Mac ในเคสบล็อก Vroom ไม่ได้)</li>
-      <li>หน้าเว็บ netcut จะเปิดขึ้นมาเอง (ถ้าไม่ขึ้น เปิด <code>http://127.0.0.1:8790</code>) · ปล่อยหน้าต่าง terminal ไว้ อย่าปิด</li>
+      <li>เปิด <b>Docker Desktop</b> และเสียบมือถือ</li>
+      <li>รันใน Terminal:
+        <pre>cd ~/netcut && npm start</pre></li>
+      <li>ครั้งแรกที่ macOS ถามว่าให้ <code>node</code> รับการเชื่อมต่อ กด <b>Allow</b> (ต้องอนุญาต ไม่งั้นเคสบล็อก Vroom ใช้ไม่ได้)</li>
+      <li>หน้าเว็บ netcut เปิดขึ้นมาเอง (ถ้าไม่ขึ้น เปิด <code>http://127.0.0.1:8790</code>) · <b>ปล่อยหน้าต่าง Terminal ไว้ อย่าปิด</b></li>
       <li>มุมขวาบนต้องมีจุดเขียว 3 จุด: <b>มือถือต่อ USB</b>, <b>AdGuard</b>, <b>DNS relay</b></li>
-      <li><b>IP ของ Mac</b> อยู่ในกล่อง "บล็อก Vroom" ตรง "ตั้ง DNS มือถือเป็น" ใช้กับ 2 เคสบล็อก Vroom</li>
     </ol>
-    <div class="note"><b>ห้ามใช้</b> adb แบบ wireless และห้ามต่อ VPN ตอนเทสต์ · staging เปิดคิว 10:00–20:00</div>
+    <div class="note"><b>ห้าม</b>ใช้ adb แบบ wireless และห้ามต่อ VPN ตอนเทสต์ · staging เปิดคิว 10:00–20:00</div>
   </section>
 
   <section>
@@ -188,3 +244,33 @@ brew install --cask android-platform-tools</pre></li>
     </ol>
   </section>
 </main>
+<script>
+document.querySelectorAll('pre').forEach((pre) => {
+  const box = document.createElement('div');
+  box.className = 'codebox';
+  pre.replaceWith(box);
+  box.appendChild(pre);
+  const btn = document.createElement('button');
+  btn.className = 'copy';
+  btn.type = 'button';
+  btn.textContent = 'Copy';
+  btn.addEventListener('click', async () => {
+    const text = pre.innerText.trim();
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // clipboard blocked (e.g. inside a sandboxed viewer): select the text so ⌘C works
+      const r = document.createRange();
+      r.selectNodeContents(pre);
+      const sel = getSelection();
+      sel.removeAllRanges();
+      sel.addRange(r);
+      btn.textContent = 'กด ⌘C';
+      return setTimeout(() => (btn.textContent = 'Copy'), 2000);
+    }
+    btn.textContent = 'Copied';
+    setTimeout(() => (btn.textContent = 'Copy'), 1500);
+  });
+  box.appendChild(btn);
+});
+</script>
