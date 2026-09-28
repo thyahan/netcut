@@ -9,6 +9,7 @@ import { dirname, join } from 'node:path';
 const DIR = dirname(fileURLToPath(import.meta.url));
 const HOSTS = JSON.parse(readFileSync(join(DIR, 'hosts.json'), 'utf8'));
 const MARKER = '! netcut temp';
+const FLUSH = 'dscacheutil -flushcache; killall -HUP mDNSResponder';
 // apps that the "Wi-Fi stays up" cut can block (Android per-app firewall, FIREWALL_CHAIN_OEM_DENY_3)
 export const APPS = { chrome: { pkg: 'com.android.chrome', label: 'Chrome (online-self)' }, vdoc: { pkg: 'th.co.truecorp.truevideocallcenter', label: 'vdoc app' } };
 
@@ -113,13 +114,18 @@ const P = {
   },
 
   // agent-side Vroom block: the Mac itself resolves through its own AdGuard. macOS shows its admin dialog.
+  // A VPN (True Corp) installs its own default resolver that wins over the Wi-Fi DNS, so the Vroom hosts
+  // also get per-domain /etc/resolver files — those beat the default resolver even with the VPN up.
   'mac-dns-block': async () => {
     const ip = await getMacIp();
     if (!ip) throw new Error('หา IP ของ Mac ไม่เจอ — ต่อ Wi-Fi อยู่มั้ย');
-    return sh('osascript', ['-e', `do shell script "networksetup -setdnsservers Wi-Fi ${ip}; dscacheutil -flushcache" with administrator privileges`], { timeout: 120000 });
+    const files = HOSTS.vroom.map((h) => `echo nameserver ${ip} > /etc/resolver/${h}`).join('; ');
+    return sh('osascript', ['-e', `do shell script "networksetup -setdnsservers Wi-Fi ${ip}; mkdir -p /etc/resolver; ${files}; ${FLUSH}" with administrator privileges`], { timeout: 120000 });
   },
-  'mac-dns-reset': () =>
-    sh('osascript', ['-e', 'do shell script "networksetup -setdnsservers Wi-Fi Empty; dscacheutil -flushcache" with administrator privileges'], { timeout: 120000 }),
+  'mac-dns-reset': () => {
+    const files = HOSTS.vroom.map((h) => `/etc/resolver/${h}`).join(' ');
+    return sh('osascript', ['-e', `do shell script "networksetup -setdnsservers Wi-Fi Empty; rm -f ${files}; ${FLUSH}" with administrator privileges`], { timeout: 120000 });
+  },
 
   'restore-all': async () => {
     const res = [];
@@ -172,17 +178,21 @@ export async function state() {
         adb('dumpsys connectivity | grep -o "DnsAddresses: \\[[^]]*\\]" | head -1'),
       ])
     : Promise.resolve([]);
-  const [[info, wifi, data, air, fw, wstat, pnet, pdns], mac, mnet, rules, mdns, ip] = await Promise.all([
+  const [[info, wifi, data, air, fw, wstat, pnet, pdns], mac, mnet, rules, mdns, ip, scutil] = await Promise.all([
     phone,
     macWifiDev().then((d) => sh('networksetup', ['-getairportpower', d])),
     sh('ping', ['-c1', '-t1', '1.1.1.1'], { timeout: 2500 }),
     agGetRules().catch(() => null),
     sh('networksetup', ['-getdnsservers', 'Wi-Fi']),
     getMacIp(),
+    sh('scutil', ['--dns']),
   ]);
   const relayUp = ip ? await (async () => { const r = new Resolver({ timeout: 1500, tries: 1 }); r.setServers([`${ip}:53`]); return r.resolve4('example.com').then(() => true, () => false); })() : false;
   const phoneDns = adbOk ? (pdns.out.match(/\[\s*(.*?)\s*\]/)?.[1] || '').replace(/\//g, '').replace(/\s*,\s*/g, ', ') : null;
   const macDns = /There aren't any/.test(mdns.out) ? 'DHCP' : mdns.out.replace(/\n/g, ', ');
+  // what the Mac actually uses for the Vroom hosts: the /etc/resolver entry, not the Wi-Fi setting (a VPN overrides that)
+  const macResolvers = scutil.out.split(/\n(?=resolver #)/);
+  const macViaMac = !!ip && HOSTS.vroom.every((h) => macResolvers.some((r) => r.includes(`domain   : ${h}\n`) && r.includes(`: ${ip}\n`)));
   return {
     adb: adbOk,
     phoneSerial: info?.serial ?? null,
@@ -204,7 +214,9 @@ export async function state() {
     phoneDns,
     macDns,
     phoneViaMac: !!(ip && phoneDns?.split(', ').includes(ip)),
-    macViaMac: !!(ip && macDns.split(', ').includes(ip)),
+    macViaMac,
+    // Wi-Fi DNS points at the Mac but the Vroom hosts don't resolve through it (VPN, or set by hand without the button)
+    macDnsIgnored: !!(ip && macDns.split(', ').includes(ip)) && !macViaMac,
   };
 }
 

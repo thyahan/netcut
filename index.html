@@ -167,6 +167,7 @@ kbd { font: 500 11px var(--mono); color: var(--mute); border: 1px solid var(--li
       <button data-id="mac-dns-reset">คืน DNS ของ Mac</button>
     </div>
     <div class="limit"><b>2 ปุ่มนี้ต้องใช้รหัส admin ของ Mac</b> · ถ้าไม่มีสิทธิ์ ข้ามเคส "Vroom ฝั่ง agent ต่อไม่ได้" ไป (ใช้ ตัดเน็ต Mac ตอน handshake แทน ได้ status agent_handshake_error เหมือนกัน)</div>
+    <div class="limit"><b>Chrome จำ DNS เอง ~1 นาที</b> · หลังบล็อก ถ้าเพิ่งเปิด Vroom ไป ให้เคลียร์ที่ chrome://net-internals/#dns (Clear host cache) ก่อนเริ่มเคส</div>
     <div class="limit"><b>บล็อก Firebase อย่างเดียวไม่ได้</b> · Firebase เปิดการเชื่อมต่อค้างไว้ตั้งแต่เปิดแอปหรือหน้าเว็บ การบล็อกที่ DNS มีผลแค่การเชื่อมต่อครั้งใหม่ จึงตัด Firebase ที่ต่ออยู่แล้วไม่ได้ · บล็อก Vroom ได้เพราะ Vroom เพิ่งเริ่มต่อตอน handshake</div>
   </section>
 
@@ -288,6 +289,7 @@ function render(s) {
   const warn = [];
   if (!s.adguardUp) warn.push('AdGuard ไม่ทำงาน ปิดแล้วรัน npm start ใหม่');
   if ((s.phoneViaMac || s.macViaMac) && !s.relayUp) warn.push('DNS relay ไม่ทำงาน เครื่องที่ใช้ DNS ของ Mac จะเปิดเว็บไม่ได้');
+  if (s.macDnsIgnored) warn.push('Mac ตั้ง DNS เป็น Mac แล้ว แต่ Vroom ยังไม่ผ่าน AdGuard (VPN ทับ DNS) — กด ให้ Mac โดนบล็อกด้วย อีกครั้ง');
   if (s.adguardArmed && !s.phoneViaMac && !s.macViaMac) warn.push('บล็อก Vroom อยู่ แต่ยังไม่มีเครื่องไหนใช้ DNS ของ Mac');
   showAlert(warn);
 

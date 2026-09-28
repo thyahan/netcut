@@ -224,7 +224,8 @@ th{font-weight:600}
     <h3>MacBook</h3>
     <ol>
       <li>กดปุ่ม <b>ให้ Mac โดนบล็อกด้วย</b> ในกล่อง "บล็อก Vroom" แล้วใส่รหัสผ่านของ Mac</li>
-      <li>เช็ค: แถว MacBook ขึ้นว่า "จะโดนถ้าบล็อก"</li>
+      <li>เช็ค: แถว MacBook ขึ้นว่า "จะโดนถ้าบล็อก" (ถ้ามีคำเตือน "VPN ทับ DNS" ให้กดปุ่มนี้อีกครั้ง)</li>
+      <li>หลังกด <b>บล็อก</b> ใน Chrome ของ agent เปิด <code>chrome://net-internals/#dns</code> → กด <b>Clear host cache</b> ก่อนเริ่มเคส (Chrome จำ DNS เองประมาณ 1 นาที)</li>
       <li>คืนค่า: กดปุ่ม <b>คืน DNS ของ Mac</b> แล้วใส่รหัสผ่าน</li>
     </ol>
     <div class="note"><b>ทำไม่ได้:</b> บล็อก Firebase อย่างเดียว (Firebase ต่อค้างไว้ตั้งแต่เปิดแอป การบล็อก DNS ตัดของที่ต่ออยู่แล้วไม่ได้) · <b>Mac แบบ Wi-Fi ต่ออยู่แต่ไม่มีอินเทอร์เน็ต</b> netcut ทำให้ไม่ได้ ให้จำลองใน Chrome ของ agent: DevTools → Network → Offline (ภาพและเสียงวิดีโอคอลยังไหลต่อ)</div>
