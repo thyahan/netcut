@@ -71,6 +71,12 @@ async function agResolve(host) {
   res.setServers([ip ? `${ip}:53` : AG_DNS]);
   return res.resolve4(host).then((a) => a[0]).catch((e) => e.code);
 }
+async function macPointsHere() {
+  if (DRY) return true;
+  if (HOSTS.vroom.some((h) => existsSync(`/etc/resolver/${h}`))) return true;
+  const ip = await getMacIp();
+  return !!ip && (await sh('networksetup', ['-getdnsservers', 'Wi-Fi'])).out.split('\n').includes(ip);
+}
 let macIp;
 export async function getMacIp() {
   return (macIp ??= (await sh('ipconfig', ['getifaddr', await macWifiDev()])).out || null);
@@ -129,7 +135,11 @@ const P = {
 
   'restore-all': async () => {
     const res = [];
-    for (const id of ['phone-restore', 'mac-restore', 'vroom-disarm']) {
+    const ids = ['phone-restore', 'mac-restore', 'vroom-disarm'];
+    // Mac left pointing at netcut (resolver files or Wi-Fi DNS) loses Vroom / all DNS once netcut stops;
+    // only then, since undoing it pops the admin dialog
+    if (await macPointsHere()) ids.push('mac-dns-reset');
+    for (const id of ids) {
       res.push(await run(id, { dry: DRY }));
     }
     const bad = res.filter((r) => !r.ok);
