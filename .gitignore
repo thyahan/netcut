@@ -5,3 +5,6 @@ netcut.log
 presets.mjs.bak
 coverage.html
 .DS_Store
+credentials/
+.env.firebase
+node_modules/

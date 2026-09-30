@@ -9,5 +9,8 @@
   },
   "bin": {
     "netcut": "cli.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.0"
   }
 }

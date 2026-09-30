@@ -7,12 +7,20 @@ import { dirname, join } from 'node:path';
 import { run, state, IDS, getMacIp } from './presets.mjs';
 import { startDnsRelay } from './dns-relay.mjs';
 import { log as writeLog, tailLog } from './log.mjs';
+import { startConsentTrigger, arm, disarm, consentState } from './consent-trigger.mjs';
 
 const DIR = dirname(fileURLToPath(import.meta.url));
 const PORT = 8790;
 const running = new Set();
 const timers = new Map(); // cut id -> { timer, restoreId, at }
 const RESTORE_OF = { 'phone-cut': 'phone-restore', 'mac-cut': 'mac-restore' };
+// consent-card targets -> existing presets
+const CONSENT_TARGETS = {
+  'phone-app-vdoc': { id: 'phone-cut', opts: { method: 'app', app: 'vdoc' } },
+  'phone-app-chrome': { id: 'phone-cut', opts: { method: 'app', app: 'chrome' } },
+  'phone-airplane': { id: 'phone-cut', opts: { method: 'airplane' } },
+  mac: { id: 'mac-cut', opts: {} },
+};
 
 const log = (r, note) => console.log(writeLog(r, note));
 
@@ -32,6 +40,17 @@ function cancelTimer(restoreId) {
   for (const [cut, t] of timers) if (t.restoreId === restoreId || restoreId === '*') clearTimeout(t.timer), timers.delete(cut);
 }
 
+function scheduleRestore(id, autoRestoreSec) {
+  if (!RESTORE_OF[id] || autoRestoreSec <= 0) return;
+  cancelTimer(RESTORE_OF[id]);
+  const restoreId = RESTORE_OF[id];
+  timers.set(id, {
+    restoreId,
+    at: Date.now() + autoRestoreSec * 1000,
+    timer: setTimeout(() => (timers.delete(id), exec(restoreId, ` (auto ${autoRestoreSec}s)`)), autoRestoreSec * 1000),
+  });
+}
+
 const json = (res, code, body) => (res.writeHead(code, { 'content-type': 'application/json' }), res.end(JSON.stringify(body)));
 
 createServer(async (req, res) => {
@@ -43,7 +62,18 @@ createServer(async (req, res) => {
   if (req.method === 'GET' && url.pathname === '/api/state') {
     const s = await state();
     const t = Object.fromEntries([...timers].map(([cut, v]) => [cut, Math.max(0, Math.round((v.at - Date.now()) / 1000))]));
-    return json(res, 200, { ...s, timers: t, running: [...running], log: tailLog(20) });
+    return json(res, 200, { ...s, timers: t, running: [...running], log: tailLog(20), consent: consentState() });
+  }
+  if (req.method === 'POST' && (url.pathname === '/api/consent-arm' || url.pathname === '/api/consent-disarm')) {
+    let body = '';
+    for await (const c of req) body += c;
+    const p = JSON.parse(body || '{}');
+    if (url.pathname === '/api/consent-disarm') return disarm(), json(res, 200, { ok: true });
+    if (!CONSENT_TARGETS[p.target]) return json(res, 400, { ok: false, err: `unknown target ${p.target}` });
+    if (p.target === 'mac' && (await state()).phoneViaMac)
+      return json(res, 409, { ok: false, err: 'มือถือใช้ DNS ของ Mac อยู่ — คืนมือถือเป็น DHCP ก่อนตัด Mac' });
+    const r = arm(String(p.sessionId || ''), { target: p.target, autoRestoreSec: Number(p.autoRestoreSec) || 0 });
+    return json(res, r.ok ? 200 : 409, r);
   }
   const m = url.pathname.match(/^\/api\/run\/([\w-]+)$/);
   if (req.method === 'POST' && m) {
@@ -66,21 +96,19 @@ createServer(async (req, res) => {
       return json(res, 409, r);
     }
     const r = await exec(id, opts.method === 'app' ? ` [app ${opts.app}]` : '', opts);
-    if (r.ok && RESTORE_OF[id] && autoRestoreSec > 0) {
-      cancelTimer(RESTORE_OF[id]);
-      const restoreId = RESTORE_OF[id];
-      timers.set(id, {
-        restoreId,
-        at: Date.now() + autoRestoreSec * 1000,
-        timer: setTimeout(() => (timers.delete(id), exec(restoreId, ` (auto ${autoRestoreSec}s)`)), autoRestoreSec * 1000),
-      });
-    }
+    if (r.ok) scheduleRestore(id, autoRestoreSec);
     return json(res, r.code === 409 ? 409 : 200, r);
   }
   json(res, 404, { err: 'not found' });
 }).listen(PORT, '127.0.0.1', async () => {
   console.log(`NetCut → http://127.0.0.1:${PORT}`);
   if (!process.env.NETCUT_NO_OPEN) execFile('open', [`http://127.0.0.1:${PORT}`]);
+  startConsentTrigger(async ({ target, autoRestoreSec }) => {
+    const { id, opts } = CONSENT_TARGETS[target];
+    const r = await exec(id, (opts.method === 'app' ? ` [app ${opts.app}]` : '') + ' (consent)', opts);
+    if (r.ok) scheduleRestore(id, autoRestoreSec);
+    return r;
+  });
   await startDnsRelay();
   const ip = await getMacIp();
   console.log(`IP ของ Mac เครื่องนี้: ${ip ?? '(ไม่เจอ — ต่อ Wi-Fi อยู่มั้ย?)'} · เคสบล็อก Vroom ให้ตั้ง DNS ของเครื่องที่จะบล็อกเป็น IP นี้`);
@@ -91,6 +119,7 @@ process.on('SIGINT', async () => {
   if (quitting) process.exit(1);
   quitting = true;
   console.log('\nSIGINT → restore-all ก่อนออก (กด Ctrl-C อีกครั้งเพื่อออกทันที)');
+  disarm();
   cancelTimer('*');
   await exec('restore-all', ' (on exit)');
   process.exit(0);

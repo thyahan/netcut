@@ -16,3 +16,17 @@ npm run stop              # ปิด AdGuard
 - ต้องมี: Docker Desktop, `node`, `adb` และมือถือ Android เสียบ USB (เปิด USB debugging) — `npm start` เช็คให้และบอกวิธีติดตั้งถ้าขาด · colima ใช้แทนได้ (ต้องเปิดแบบ `--port-forwarder grpc`)
 - AdGuard รับ DNS ที่ port 1053 · `dns-relay.mjs` ส่งต่อจาก port 53 ของ Mac (ใช้ได้ทั้ง Docker Desktop และ colima ซึ่งจอง 53 ใน VM)
 - ไฟล์ลับ/ข้อมูล (`adguard/.env`, `adguard/conf`, `adguard/work`, `netcut.log`) ถูกสร้างตอนรันครั้งแรก ไม่ต้องคัดลอกไปเครื่องอื่น
+
+## ตัดเน็ตตอนลูกค้ากด consent (เคสเน็ตหลุดช่วง handshake)
+
+หน้า panel เรียง 3 ขั้น: **ตัดเน็ตใคร** (ลูกค้า · vdoc app / ลูกค้า · Chrome / ลูกค้า · ทั้งเครื่อง / agent · Mac) → **คืนเน็ตเองหลังตัด** → **ตัดเมื่อไหร่** (ตัดตอนนี้ `1` / คืน `2` หรือ ตัดตอนลูกค้ากด consent)
+
+ตาราง session อ่าน `/sessions` บน staging RTDB (read-only, service account ลอกจาก video-call-devtools: `credentials/uat/service-account.json` + `.env.firebase` — ทั้งคู่ gitignore)
+
+1. เลือกตัดใคร และคืนเน็ตเองให้ **เกิน 30 วิ** (default 130) ให้ liveness ตัดสินได้
+2. พาลูกค้าไปถึงหน้า consent → session โผล่ในตาราง → กด **ตัดตอน consent**
+3. ลูกค้ากด consent → panel ตัดเน็ตทันทีที่ `consent_at` ถูกเขียน (บอกกี่ ms หลัง consent)
+4. ผลที่ควรได้: ฝั่งที่ถูกตัดไม่เคยส่ง heartbeat → อีกฝั่งจบด้วย handshake error (`never_received`) ไม่ใช่ `heartbeat_timeout`
+   - ตัด agent (Mac): listener ของ panel หลุดไปพร้อม Wi-Fi แต่ยกเลิกการรอก่อนตัดแล้ว และ timer คืนเน็ตยังทำงาน
+
+รอได้ทีละ session · session ที่กด consent แล้วไม่มีปุ่ม · session ถูกลบก่อน consent = ยกเลิกเอง ไม่ตัด
