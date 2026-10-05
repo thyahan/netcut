@@ -53,8 +53,14 @@ function scheduleRestore(id, autoRestoreSec) {
 
 const json = (res, code, body) => (res.writeHead(code, { 'content-type': 'application/json' }), res.end(JSON.stringify(body)));
 
+// Every POST changes network state. Only the panel itself may send one: a page on another site can
+// reach 127.0.0.1 too (CSRF), and a rebound hostname would pass as same-origin without the Host check.
+const SELF = [`127.0.0.1:${PORT}`, `localhost:${PORT}`];
+const fromPanel = ({ host, origin }) => SELF.includes(host) && (origin === undefined || SELF.some((h) => origin === `http://${h}`));
+
 createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
+  if (req.method === 'POST' && !fromPanel(req.headers)) return json(res, 403, { ok: false, err: 'forbidden origin' });
   if (req.method === 'GET' && url.pathname === '/') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
     return res.end(readFileSync(join(DIR, 'index.html')));
