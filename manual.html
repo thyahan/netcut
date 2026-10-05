@@ -139,7 +139,9 @@ th{font-weight:600}
       <tr><td><kbd>2</kbd></td><td>คืนเน็ตฝั่งที่เลือก (มือถือคืนได้ทุกแบบ)</td><td><code>airplane-mode disable; svc wifi enable; svc data enable</code> / <code>networksetup -setairportpower en0 on</code></td></tr>
       <tr><td><kbd>5</kbd></td><td>บล็อก Vroom</td><td>เพิ่ม rule ใน AdGuard บน Mac</td></tr>
       <tr><td><kbd>6</kbd></td><td>ปลดบล็อก Vroom</td><td>ลบ rule ใน AdGuard</td></tr>
-      <tr><td><kbd>a</kbd> / <kbd>Esc</kbd></td><td colspan="2">คืนทุกอย่าง (2 + 4 + 6)</td></tr>
+      <tr><td><kbd>7</kbd></td><td>บล็อก Realtime Database</td><td>เพิ่ม rule <code>||firebaseio.com^</code> ใน AdGuard บน Mac</td></tr>
+      <tr><td><kbd>8</kbd></td><td>ปลดบล็อก Realtime Database</td><td>ลบ rule ใน AdGuard</td></tr>
+      <tr><td><kbd>a</kbd> / <kbd>Esc</kbd></td><td colspan="2">คืนทุกอย่าง (2 + 4 + 6 + 8)</td></tr>
     </table></div>
     <p class="lede">กดปุ่มบนหน้าเว็บ หรือกดเลขบนคีย์บอร์ดตอนหน้าเว็บเปิดอยู่ก็ได้ · หน้าเว็บเรียง 3 ขั้น: <b>ตัดเน็ตใคร</b> → <b>คืนเน็ตเองหลังตัด</b> (ค่าเริ่มต้น <b>130 วิ</b> เลือก ไม่คืน / 10 / 45 วิ หรือกำหนดเองได้) → <b>ตัดเมื่อไหร่</b> (ตัดตอนนี้ หรือตัดตอนลูกค้ากด consent) · เคส "ตอนคุย" ใช้ <b>130 วิ</b> · เคสที่ต้องกด OK ตอนยังออฟไลน์ ให้เลือก <b>ไม่คืน</b></p>
   </section>
@@ -182,6 +184,16 @@ th{font-weight:600}
     <div class="case"><h3>agent หลุด</h3><div class="meta">video-call-agent</div>
       <ol><li>เลือก agent · Mac → agent กดรับ แล้วกด <kbd>1</kbd></li></ol>
       <div class="expect">คาดหวัง: <b>agent_handshake_error</b> · ลูกค้า: popup วางสาย (30) → thankyou</div></div>
+    <div class="case"><h3>เปิดหน้าแล้วไม่ได้เวลาจาก server ("พบปัญหาในการเชื่อมต่อ")</h3><div class="meta">online-self · <b>ต้องตั้ง DNS มือถือ</b></div>
+      <ol>
+        <li>ตั้ง DNS มือถือเป็น IP ของ Mac (ดูข้อ 5)</li>
+        <li>กด <kbd>7</kbd> แล้วรอ 60 วิ</li>
+        <li>ปิด Chrome บนมือถือ แล้วเปิด online-self ใหม่ (หน้าแรก หรือ <code>/instructions</code>)</li>
+        <li>รอ 5 วิ ที่หน้า loading</li>
+        <li>กด <kbd>8</kbd> รอ 60 วิ แล้วกดปุ่มลองใหม่บนมือถือ</li>
+        <li>จบเคส: คืน DNS มือถือเป็น DHCP</li>
+      </ol>
+      <div class="expect">คาดหวัง: ขั้น 4 ขึ้น <b>พบปัญหาในการเชื่อมต่อ</b> พร้อมปุ่มลองใหม่ (ไม่ขึ้นข้อความนอกเวลาทำการ) · ขั้น 5 เข้าหน้า instructions ได้ปกติ</div></div>
     <div class="case"><h3>Vroom ฝั่งลูกค้าต่อไม่ได้</h3><div class="meta">video-call-app · online-self · <b>ต้องตั้ง DNS มือถือ</b></div>
       <ol>
         <li>ตั้ง DNS มือถือเป็น IP ของ Mac (ดูข้อ 5)</li>
@@ -217,7 +229,7 @@ th{font-weight:600}
   </section>
 
   <section>
-    <h2>5. ตั้ง DNS (เฉพาะ 2 เคสบล็อก Vroom)</h2>
+    <h2>5. ตั้ง DNS (เฉพาะเคสบล็อก Vroom และบล็อก Realtime Database)</h2>
     <h3>มือถือ Android</h3>
     <ol>
       <li>Settings → Wi-Fi → กดค้างหรือกด ⚙️ ที่เครือข่ายที่ต่ออยู่ → Advanced / View more</li>
@@ -233,7 +245,7 @@ th{font-weight:600}
       <li>หลังกด <b>บล็อก</b> ใน Chrome ของ agent เปิด <code>chrome://net-internals/#dns</code> → กด <b>Clear host cache</b> ก่อนเริ่มเคส (Chrome จำ DNS เองประมาณ 1 นาที)</li>
       <li>คืนค่า: กดปุ่ม <b>คืน DNS ของ Mac</b> แล้วใส่รหัสผ่าน</li>
     </ol>
-    <div class="note"><b>ทำไม่ได้:</b> บล็อก Firebase อย่างเดียว (Firebase ต่อค้างไว้ตั้งแต่เปิดแอป การบล็อก DNS ตัดของที่ต่ออยู่แล้วไม่ได้) · <b>Mac แบบ Wi-Fi ต่ออยู่แต่ไม่มีอินเทอร์เน็ต</b> netcut ทำให้ไม่ได้ ให้จำลองใน Chrome ของ agent: DevTools → Network → Offline (ภาพและเสียงวิดีโอคอลยังไหลต่อ)</div>
+    <div class="note"><b>ทำไม่ได้:</b> บล็อก Firebase กลางสาย (Firebase ต่อค้างไว้ตั้งแต่เปิดแอป การบล็อก DNS ตัดของที่ต่ออยู่แล้วไม่ได้ · บล็อกได้เฉพาะก่อนเปิดหน้า ด้วยปุ่ม 7) · <b>Mac แบบ Wi-Fi ต่ออยู่แต่ไม่มีอินเทอร์เน็ต</b> netcut ทำให้ไม่ได้ ให้จำลองใน Chrome ของ agent: DevTools → Network → Offline (ภาพและเสียงวิดีโอคอลยังไหลต่อ)</div>
     <div class="note"><b>ระวัง:</b> ตอนมือถือใช้ DNS ของ Mac ห้ามตัดเน็ต Mac (ตัวเลือก agent · Mac จะถูกกันไว้) และห้ามปิด netcut ไม่งั้นมือถือเปิดเว็บไม่ได้ คืน DNS ก่อนทุกครั้ง</div>
   </section>
 

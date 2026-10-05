@@ -4,7 +4,7 @@ import { log } from './log.mjs';
 import { startDnsRelay } from './dns-relay.mjs';
 
 const RESTORE_OF = { 'phone-cut': 'phone-restore', 'mac-cut': 'mac-restore' };
-const KEYMAP = { 1: 'phone-cut', 2: 'phone-restore', 3: 'mac-cut', 4: 'mac-restore', 5: 'vroom-arm', 6: 'vroom-disarm', a: 'restore-all', '\x1b': 'restore-all' };
+const KEYMAP = { 1: 'phone-cut', 2: 'phone-restore', 3: 'mac-cut', 4: 'mac-restore', 5: 'vroom-arm', 6: 'vroom-disarm', 7: 'rtdb-arm', 8: 'rtdb-disarm', a: 'restore-all', '\x1b': 'restore-all' };
 
 const c = (code) => (s) => `\x1b[${code}m${s}\x1b[0m`;
 const bold = c(1), dim = c(2), red = c(31), green = c(32), yellow = c(33), blue = c(34), cyan = c(36), inv = c(7);
@@ -59,7 +59,7 @@ export async function watch({ after = 0, dry = false } = {}) {
       if (!dry) log(r, note);
       push(`${r.ok ? green('✔') : red('✘')} ${bold(id)}${note} ${dim(`${r.ms} ms`)}${r.err ? ' ' + red(r.err) : ''}`);
       if (r.out && !r.ok) r.out.split('\n').forEach((l) => push('  ' + dim(l)));
-      else if (r.out && id === 'vroom-arm') r.out.split('\n').forEach((l) => push('  ' + (l.startsWith('BLOCKED') ? green(l) : red(l))));
+      else if (r.out && (id === 'vroom-arm' || id === 'rtdb-arm')) r.out.split('\n').forEach((l) => push('  ' + (l.startsWith('BLOCKED') ? green(l) : red(l))));
       const restoreId = RESTORE_OF[id];
       if (r.ok && restoreId && after) {
         cancel(restoreId);
@@ -138,6 +138,7 @@ export async function watch({ after = 0, dry = false } = {}) {
     L.push(`  ${k('1', 'cut phone   ', red)}  ${k('2', 'restore phone', green)}   ${k('a', 'restore ALL', blue)}`);
     L.push(`  ${k('3', 'cut Mac     ', red)}  ${k('4', 'restore Mac  ', green)}   ${k('s', 'refresh', dim)}`);
     L.push(`  ${k('5', 'block Vroom ', yellow)}  ${k('6', 'unblock Vroom', green)}   ${k('q', 'quit', dim)}  ${dim('^C = restore ALL + quit')}`);
+    L.push(`  ${k('7', 'block RTDB  ', yellow)}  ${k('8', 'unblock RTDB ', green)}   ${st?.rtdbArmed ? red('● Realtime DB BLOCKED') : ''}`);
     L.push(`  ${dim('5 = บล็อกเฉพาะเครื่องที่ชี้ DNS มาที่ Mac · กดก่อนเข้าคิว/ก่อน agent รับสาย ≥60 วิ')}`);
     L.push('');
 
@@ -167,7 +168,7 @@ export async function watch({ after = 0, dry = false } = {}) {
     const s = await state().catch(() => null);
     cleanupScreen();
     process.stdout.write(`netcut watch ออกแล้ว\n`);
-    if (s && (s.adguardArmed || s.phoneWifi === false || s.phoneData === false || s.macWifi === false))
+    if (s && (s.adguardArmed || s.rtdbArmed || s.phoneWifi === false || s.phoneData === false || s.macWifi === false))
       process.stdout.write(yellow('⚠ ยังมีของที่ตัด/บล็อกค้างอยู่ — รัน: netcut all\n'));
     process.exit(0);
   }

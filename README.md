@@ -30,3 +30,13 @@ npm run stop              # ปิด AdGuard
    - ตัด agent (Mac): listener ของ panel หลุดไปพร้อม Wi-Fi แต่ยกเลิกการรอก่อนตัดแล้ว และ timer คืนเน็ตยังทำงาน
 
 รอได้ทีละ session · session ที่กด consent แล้วไม่มีปุ่ม · session ถูกลบก่อน consent = ยกเลิกเอง ไม่ตัด
+
+## บล็อก Firebase Realtime Database (เคส online-self ขึ้น "พบปัญหาในการเชื่อมต่อ" ตอนเปิดหน้า)
+
+กล่อง **บล็อก Realtime Database ผ่าน DNS** (ปุ่ม `7` / `8`, CLI `rtdb-arm` / `rtdb-disarm`) ใส่ rule `||firebaseio.com^` ใน AdGuard แยกจาก rule ของ Vroom — บล็อก/ปลดอันหนึ่งไม่กระทบอีกอัน
+
+1. ตั้ง DNS มือถือเป็น IP ของ Mac → กด `7` รอ 60 วิ
+2. ปิด Chrome บนมือถือ แล้วเปิด online-self ใหม่ → หน้าเว็บโหลดได้ แต่ `.info/serverTimeOffset` ไม่มา → ขึ้น "พบปัญหาในการเชื่อมต่อ"
+3. กด `8` รอ 60 วิ แล้วกดปุ่มลองใหม่ → เข้าหน้าได้
+
+มีผลเฉพาะการเชื่อมต่อใหม่ (ต้องบล็อกก่อนเปิดหน้า) และห้ามบล็อกค้างไว้ตอนเทสต์เคสอื่น เพราะคิว/รับสาย/heartbeat ใช้ Realtime Database ทั้งหมด

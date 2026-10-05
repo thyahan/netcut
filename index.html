@@ -137,6 +137,7 @@ details .body { padding: 10px 0 0; font-size: 14px }
       <div class="wire na" id="w-phone"><b>มือถือ</b><span class="line"><span class="timer"></span></span><span class="state">กำลังโหลด…</span><span class="side" id="phone-side"></span></div>
       <div class="wire na" id="w-mac"><b>Mac</b><span class="line"><span class="timer"></span></span><span class="state">กำลังโหลด…</span><span class="side" id="mac-side"></span></div>
       <div class="wire na" id="w-vroom"><b>Vroom</b><span class="line"></span><span class="state">–</span><span class="side"></span></div>
+      <div class="wire na" id="w-rtdb"><b>Realtime DB</b><span class="line"></span><span class="state">–</span><span class="side"></span></div>
     </div>
   </header>
   <div class="alert" id="alert" hidden></div>
@@ -222,7 +223,24 @@ details .body { padding: 10px 0 0; font-size: 14px }
         </div>
         <div class="limit"><b>2 ปุ่มนี้ต้องใช้รหัส admin ของ Mac</b> · ถ้าไม่มีสิทธิ์ ใช้ "ตัด agent · Mac ตอนลูกค้ากด consent" แทน ได้ status agent_handshake_error เหมือนกัน</div>
         <div class="limit"><b>Chrome จำ DNS เอง ~1 นาที</b> · ถ้าเพิ่งเปิด Vroom ไป ให้เคลียร์ที่ chrome://net-internals/#dns (Clear host cache) ก่อนเริ่มเคส</div>
-        <div class="limit"><b>บล็อก Firebase อย่างเดียวไม่ได้</b> · DNS มีผลแค่การเชื่อมต่อใหม่ Firebase ต่อค้างไว้ตั้งแต่เปิดแอป · Vroom บล็อกได้เพราะเพิ่งเริ่มต่อตอน handshake</div>
+        <div class="limit"><b>บล็อก Firebase กลางสายไม่ได้</b> · DNS มีผลแค่การเชื่อมต่อใหม่ Firebase ต่อค้างไว้ตั้งแต่เปิดแอป · Vroom บล็อกได้เพราะเพิ่งเริ่มต่อตอน handshake · บล็อกตั้งแต่ก่อนเปิดหน้าใช้กล่อง "บล็อก Realtime Database"</div>
+      </div>
+    </details>
+
+    <details>
+      <summary>บล็อก Realtime Database ผ่าน DNS · เคส online-self ขึ้น "พบปัญหาในการเชื่อมต่อ" ตอนเปิดหน้า</summary>
+      <div class="body">
+        <div class="facts">หน้าเว็บยังโหลดได้ แต่ต่อ Realtime Database ไม่ได้ เลยไม่ได้เวลาจาก server · มีผลเฉพาะเครื่องที่ตั้ง DNS เป็น IP ของ Mac</div>
+        <div class="row-actions">
+          <button data-id="rtdb-arm">บล็อก Realtime DB<kbd>7</kbd></button>
+          <button data-id="rtdb-disarm">ปลดบล็อก<kbd>8</kbd></button>
+        </div>
+        <ul class="who-dns">
+          <li><span>มือถือ</span><span id="phone-hit-rtdb">–</span></li>
+        </ul>
+        <div class="limit" style="margin-top:0"><b>ขั้นตอน</b> · ตั้ง DNS มือถือเป็น IP ของ Mac → กดบล็อก รอ 60 วิ → ปิด Chrome บนมือถือแล้วเปิด online-self ใหม่ → รอ 5 วิ ต้องขึ้น "พบปัญหาในการเชื่อมต่อ" → กดปลดบล็อก รอ 60 วิ แล้วกดปุ่มลองใหม่ ต้องเข้าหน้าได้</div>
+        <div class="limit"><b>ต้องบล็อกก่อนเปิดหน้า</b> · DNS มีผลแค่การเชื่อมต่อใหม่ หน้าที่เปิดค้างอยู่ยังต่อ Realtime Database ได้เหมือนเดิม</div>
+        <div class="limit"><b>ห้ามบล็อกค้างไว้ตอนเทสต์เคสอื่น</b> · เข้าคิว รับสาย heartbeat ใช้ Realtime Database ทั้งหมด</div>
       </div>
     </details>
 
@@ -252,6 +270,7 @@ const TARGET_LABEL = { 'phone-app-vdoc': 'ลูกค้า · vdoc app', 'phon
 const LABEL = {
   'phone-cut': 'ตัดเน็ตมือถือ', 'phone-restore': 'คืนเน็ตมือถือ', 'mac-cut': 'ตัดเน็ต Mac', 'mac-restore': 'คืนเน็ต Mac',
   'vroom-arm': 'บล็อก Vroom', 'vroom-disarm': 'ปลดบล็อก Vroom', 'restore-all': 'คืนเน็ตทุกอย่าง',
+  'rtdb-arm': 'บล็อก Realtime DB', 'rtdb-disarm': 'ปลดบล็อก Realtime DB',
   'mac-dns-block': 'ให้ Mac โดนบล็อกด้วย', 'mac-dns-reset': 'คืน DNS ของ Mac',
 };
 // target -> preset + body for /api/run
@@ -303,7 +322,7 @@ document.addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => {
   if (e.target.matches('input[type=number], textarea') && e.key !== 'Escape') return;
   if (e.repeat || e.metaKey || e.ctrlKey) return;
-  const act = { 1: cutNow, 2: restoreNow, 5: () => run('vroom-arm'), 6: () => run('vroom-disarm'), Escape: () => run('restore-all') }[e.key];
+  const act = { 1: cutNow, 2: restoreNow, 5: () => run('vroom-arm'), 6: () => run('vroom-disarm'), 7: () => run('rtdb-arm'), 8: () => run('rtdb-disarm'), Escape: () => run('restore-all') }[e.key];
   if (!act) return;
   e.preventDefault();
   act();
@@ -344,6 +363,8 @@ function render(s) {
   $('#w-mac').title = `Wi-Fi ${onoff(s.macWifi)}${s.macIp ? ' · ' + s.macIp : ''}`;
   if (!s.adguardUp) wire($('#w-vroom'), 'na', 'AdGuard ไม่ทำงาน');
   else wire($('#w-vroom'), s.adguardArmed ? 'cut' : '', s.adguardArmed ? 'กำลังบล็อก' : 'ไม่ได้บล็อก');
+  if (!s.adguardUp) wire($('#w-rtdb'), 'na', 'AdGuard ไม่ทำงาน');
+  else wire($('#w-rtdb'), s.rtdbArmed ? 'cut' : '', s.rtdbArmed ? 'กำลังบล็อก' : 'ไม่ได้บล็อก');
 
   // step 1: disable phone targets without USB, mac when the phone's DNS goes through it
   const macGuard = !!(s.phoneViaMac && s.macWifi);
@@ -381,15 +402,17 @@ function render(s) {
   $('#mac-ip').textContent = s.macIp ?? '–';
   $('#phone-dns').textContent = s.phoneDns ? `DNS ${s.phoneDns}` : '';
   $('#mac-dns').textContent = `DNS ${s.macDns === 'DHCP' ? 'ค่าเดิม' : s.macDns ?? '?'}`;
-  const hit = (el, via) => { el.textContent = via ? (s.adguardArmed ? 'โดนบล็อก' : 'จะโดนถ้าบล็อก') : 'ไม่โดน'; el.className = via ? 'hit' : 'mute'; };
+  const hit = (el, via, armed = s.adguardArmed) => { el.textContent = via ? (armed ? 'โดนบล็อก' : 'จะโดนถ้าบล็อก') : 'ไม่โดน'; el.className = via ? 'hit' : 'mute'; };
   hit($('#phone-hit'), s.phoneViaMac);
   hit($('#mac-hit'), s.macViaMac);
+  hit($('#phone-hit-rtdb'), s.phoneViaMac, s.rtdbArmed);
 
   const warn = [];
   if (!s.adguardUp) warn.push('AdGuard ไม่ทำงาน ปิดแล้วรัน npm start ใหม่');
   if ((s.phoneViaMac || s.macViaMac) && !s.relayUp) warn.push('DNS relay ไม่ทำงาน เครื่องที่ใช้ DNS ของ Mac จะเปิดเว็บไม่ได้');
   if (s.macDnsIgnored) warn.push('Mac ตั้ง DNS เป็น Mac แล้ว แต่ Vroom ยังไม่ผ่าน AdGuard (VPN ทับ DNS) — กด ให้ Mac โดนบล็อกด้วย อีกครั้ง');
   if (s.adguardArmed && !s.phoneViaMac && !s.macViaMac) warn.push('บล็อก Vroom อยู่ แต่ยังไม่มีเครื่องไหนใช้ DNS ของ Mac');
+  if (s.rtdbArmed && !s.phoneViaMac) warn.push('บล็อก Realtime DB อยู่ แต่มือถือยังไม่ได้ใช้ DNS ของ Mac');
   showAlert(warn);
 
   // server sends newest first: "ISO \t epoch \t id(note) \t code \t err"

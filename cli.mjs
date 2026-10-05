@@ -4,7 +4,7 @@ import { run, state, IDS } from './presets.mjs';
 import { log, tailLog } from './log.mjs';
 import { watch } from './tui.mjs';
 
-const ALIAS = { 1: 'phone-cut', 2: 'phone-restore', 3: 'mac-cut', 4: 'mac-restore', 5: 'vroom-arm', 6: 'vroom-disarm', all: 'restore-all', esc: 'restore-all' };
+const ALIAS = { 1: 'phone-cut', 2: 'phone-restore', 3: 'mac-cut', 4: 'mac-restore', 5: 'vroom-arm', 6: 'vroom-disarm', 7: 'rtdb-arm', 8: 'rtdb-disarm', all: 'restore-all', esc: 'restore-all' };
 const RESTORE_OF = { 'phone-cut': 'phone-restore', 'mac-cut': 'mac-restore' };
 
 const HELP = `usage: netcut <command> [--restore-after <sec>] [--dry]
@@ -16,6 +16,8 @@ const HELP = `usage: netcut <command> [--restore-after <sec>] [--dry]
   4  mac-restore     คืน Wi-Fi ของ Mac
   5  vroom-arm       บล็อก Vroom ที่ AdGuard บน Mac (เฉพาะเครื่องที่ตั้ง DNS เป็น IP ของ Mac)
   6  vroom-disarm    ปลดบล็อก Vroom
+  7  rtdb-arm        บล็อก Firebase Realtime Database (online-self ขึ้น "พบปัญหาในการเชื่อมต่อ" ตอนเปิดหน้า)
+  8  rtdb-disarm     ปลดบล็อก Realtime Database
   all restore-all    คืนทุกอย่าง
      status          ดูสถานะ
      log [n]         ดู netcut.log n บรรทัดล่าสุด (default 20)
@@ -71,8 +73,9 @@ async function runStatus() {
 มือถือ        ${s.phoneModel ?? '-'}   wifi ${f(s.phoneWifi)}   data ${f(s.phoneData)}   internet ${f(s.phoneOnline)}
 Mac Wi-Fi    ${f(s.macWifi)}   internet ${f(s.macOnline)}
 DNS          มือถือ ${s.phoneDns ?? '-'} · Mac ${s.macDns} · IP ของ Mac ${s.macIp ?? '?'} · relay :53 ${f(s.relayUp)}
-AdGuard      ${f(s.adguardUp)}   Vroom บล็อก ${f(s.adguardArmed)}`);
+AdGuard      ${f(s.adguardUp)}   Vroom บล็อก ${f(s.adguardArmed)}   Realtime DB บล็อก ${f(s.rtdbArmed)}`);
   if (s.adguardArmed) console.log('\x1b[33m⚠ Vroom ยังถูกบล็อกอยู่ — รัน: netcut 6\x1b[0m');
+  if (s.rtdbArmed) console.log('\x1b[33m⚠ Realtime DB ยังถูกบล็อกอยู่ — รัน: netcut 8\x1b[0m');
 }
 
 if (cmd === '-w' || cmd === '--watch' || cmd === 'watch') {

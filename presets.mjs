@@ -9,6 +9,9 @@ import { dirname, join } from 'node:path';
 const DIR = dirname(fileURLToPath(import.meta.url));
 const HOSTS = JSON.parse(readFileSync(join(DIR, 'hosts.json'), 'utf8'));
 const MARKER = '! netcut temp';
+const ruleOf = (h) => `||${h}^`;
+// hosts asked to confirm a block took effect, where the blocked name itself is only a parent domain
+const PROBE = { rtdb: ['true-videocall-staging.firebaseio.com'] };
 const FLUSH = 'dscacheutil -flushcache; killall -HUP mDNSResponder';
 // apps that the "Wi-Fi stays up" cut can block (Android per-app firewall, FIREWALL_CHAIN_OEM_DENY_3)
 export const APPS = { chrome: { pkg: 'com.android.chrome', label: 'Chrome (online-self)' }, vdoc: { pkg: 'th.co.truecorp.truevideocallcenter', label: 'vdoc app' } };
@@ -63,6 +66,32 @@ async function agSetRules(rules) {
   });
   if (!r.ok) throw new Error(`AdGuard set_rules failed: HTTP ${r.status}`);
 }
+// each group owns its own rules, so blocking or unblocking one leaves the other alone
+async function setBlock(group, on) {
+  const mine = HOSTS[group].map(ruleOf);
+  const rules = (await agGetRules()).filter((r) => r !== MARKER && !mine.includes(r)).concat(on ? mine : []);
+  await agSetRules(rules.length ? [MARKER, ...rules] : []);
+}
+async function arm(group) {
+  await setBlock(group, true);
+  const probes = PROBE[group] || HOSTS[group];
+  let lines = [];
+  for (let i = 0; i < 10; i++) {
+    await sleep(DRY ? 0 : 500);
+    lines = await Promise.all(probes.map(async (h) => [h, DRY ? '0.0.0.0' : await agResolve(h)]));
+    if (lines.every(([, ip]) => ip === '0.0.0.0')) break;
+  }
+  const ok = lines.every(([, ip]) => ip === '0.0.0.0');
+  return {
+    code: ok ? 0 : 1,
+    out: lines.map(([h, ip]) => `${ip === '0.0.0.0' ? 'BLOCKED' : 'NOT BLOCKED'} ${h}: ${ip}`).join('\n') + (ok ? '\nเครื่องที่ชี้ DNS มาที่ Mac จะเห็นผลภายใน ≤60 วิ (cache)' : ''),
+    err: ok ? '' : 'AdGuard ยังไม่ตอบ 0.0.0.0',
+  };
+}
+async function disarm(group) {
+  await setBlock(group, false);
+  return { code: 0, out: `AdGuard ${group} rules cleared`, err: '' };
+}
 // what AdGuard itself answers (not what a device has cached)
 // asked through the Mac's :53 relay (UDP there, TCP to AdGuard) — colima's own UDP forward to 1053 is unreliable
 async function agResolve(host) {
@@ -99,25 +128,12 @@ const P = {
   'mac-cut': async () => sh('networksetup', ['-setairportpower', await macWifiDev(), 'off']),
   'mac-restore': async () => sh('networksetup', ['-setairportpower', await macWifiDev(), 'on']),
 
-  'vroom-arm': async () => {
-    await agSetRules([MARKER, ...HOSTS.vroom.map((h) => `||${h}^`)]);
-    let lines = [];
-    for (let i = 0; i < 10; i++) {
-      await sleep(DRY ? 0 : 500);
-      lines = await Promise.all(HOSTS.vroom.map(async (h) => [h, DRY ? '0.0.0.0' : await agResolve(h)]));
-      if (lines.every(([, ip]) => ip === '0.0.0.0')) break;
-    }
-    const ok = lines.every(([, ip]) => ip === '0.0.0.0');
-    return {
-      code: ok ? 0 : 1,
-      out: lines.map(([h, ip]) => `${ip === '0.0.0.0' ? 'BLOCKED' : 'NOT BLOCKED'} ${h}: ${ip}`).join('\n') + (ok ? '\nเครื่องที่ชี้ DNS มาที่ Mac จะเห็นผลภายใน ≤60 วิ (cache)' : ''),
-      err: ok ? '' : 'AdGuard ยังไม่ตอบ 0.0.0.0',
-    };
-  },
-  'vroom-disarm': async () => {
-    await agSetRules([]);
-    return { code: 0, out: 'AdGuard rules cleared', err: '' };
-  },
+  'vroom-arm': () => arm('vroom'),
+  'vroom-disarm': () => disarm('vroom'),
+  // Firebase Realtime Database only: the page still loads, but .info/serverTimeOffset never arrives
+  // (online-self "พบปัญหาในการเชื่อมต่อ"). Only new connections are affected — block before opening the page.
+  'rtdb-arm': () => arm('rtdb'),
+  'rtdb-disarm': () => disarm('rtdb'),
 
   // agent-side Vroom block: the Mac itself resolves through its own AdGuard. macOS shows its admin dialog.
   // A VPN (True Corp) installs its own default resolver that wins over the Wi-Fi DNS, so the Vroom hosts
@@ -135,7 +151,7 @@ const P = {
 
   'restore-all': async () => {
     const res = [];
-    const ids = ['phone-restore', 'mac-restore', 'vroom-disarm'];
+    const ids = ['phone-restore', 'mac-restore', 'vroom-disarm', 'rtdb-disarm'];
     // Mac left pointing at netcut (resolver files or Wi-Fi DNS) loses Vroom / all DNS once netcut stops;
     // only then, since undoing it pops the admin dialog
     if (await macPointsHere()) ids.push('mac-dns-reset');
@@ -218,7 +234,8 @@ export async function state() {
     macWifi: /: On$/.test(mac.out),
     macOnline: mnet.code === 0,
     adguardUp: rules !== null,
-    adguardArmed: rules === null ? null : rules.includes(MARKER),
+    adguardArmed: rules === null ? null : HOSTS.vroom.every((h) => rules.includes(ruleOf(h))),
+    rtdbArmed: rules === null ? null : HOSTS.rtdb.every((h) => rules.includes(ruleOf(h))),
     macIp: ip,
     relayUp,
     phoneDns,
