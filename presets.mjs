@@ -106,9 +106,9 @@ async function macPointsHere() {
   const ip = await getMacIp();
   return !!ip && (await sh('networksetup', ['-getdnsservers', 'Wi-Fi'])).out.split('\n').includes(ip);
 }
-let macIp;
+// not cached: the Mac gets a new IP when it changes Wi-Fi or renews DHCP while netcut is running
 export async function getMacIp() {
-  return (macIp ??= (await sh('ipconfig', ['getifaddr', await macWifiDev()])).out || null);
+  return (await sh('ipconfig', ['getifaddr', await macWifiDev()])).out || null;
 }
 
 const P = {
